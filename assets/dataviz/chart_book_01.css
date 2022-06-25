@@ -1,0 +1,27 @@
+.svg {
+    display: block;
+    margin: auto;
+    background: white;
+    color: #000;
+    font-family: "Raleway", sans-serif;
+}
+    
+.country {
+    fill: #999;
+    stroke: black;
+    stroke-width: 0.5px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.axis line {
+    stroke: #000;
+}
+
+.axis path {
+    stroke: #000;
+}
+
+.axis text {
+    fill: #000;
+}

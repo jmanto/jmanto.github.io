@@ -1,0 +1,36 @@
+Pays,Continent,Country,Code,Etat
+Allemagne,Europe,Germany,DEU,19
+Australie,Océanie,Australia,AUS,2
+Autriche,Europe,Austria,AUT,3
+Belgique,Europe,Belgium,BEL,7
+Bulgarie,Europe,Bulgaria,BGR,1
+Canada,Amérique,Canada,CAN,2
+Chili,Amérique,Chile,CHL,3
+Chine,Asie,China,CHN,5
+Colombie,Amérique,Colombia,COL,1
+Côte d'Ivoire,Afrique,Cote d'Ivoire,CIV,1
+Égypte,Afrique,Egypt,EGY,1
+Espagne,Europe,Spain,ESP,3
+États-Unis,Amérique,United States,USA,52
+France,Europe,France,FRA,165
+Géorgie,Asie,Georgia,GEO,1
+Grèce,Europe,Greece,GRC,7
+Inde,Asie,India,IND,3
+Irlande,Europe,Ireland,IRL,2
+Israël,Asie,Israel,ISR,2
+Italie,Europe,Italy,ITA,13
+Japon,Asie,Japan,JPN,6
+Liban,Asie,Lebanon,LBN,2
+Maroc,Afrique,Morocco,MAR,1
+Norvège,Europe,Norway,NOR,1
+Nouvelle-Zélande,Océanie,New Zealand,NZL,3
+Pays-Bas,Europe,Netherlands,NLD,2
+Pologne,Europe,Poland,POL,1
+République Dominicaine,Amérique,Dominican Republic,DOM,1
+Roumanie,Europe,Romania,ROU,1
+Royaume-Uni,Europe,United Kingdom,GBR,59
+Russie,Europe,Russia,RUS,14
+Suède,Europe,Sweden,SWE,4
+Suisse,Europe,Switzerland,CHE,10
+Turquie,Asie,Turkey,TUR,1
+Ukraine,Europe,Ukraine,UKR,3
