@@ -63,12 +63,11 @@
 
       <nav id="navbar" class="nav-menu navbar">
         <ul>
-          <li><a href="#hero" class="nav-link scrollto active"><i class="bx bx-home"></i> <span>Maison</span></a></li>
+          <li><a href="#hero" class="nav-link scrollto active"><i class="bx bx-home"></i> <span>Home</span></a></li>
           <li><a href="#about" class="nav-link scrollto"><i class="bx bx-user"></i> <span>A propos</span></a></li>
           <li><a href="#resume" class="nav-link scrollto"><i class="bx bx-file-blank"></i> <span>Curriculum Vitae</span></a></li>
           <li><a href="#portfolio" class="nav-link scrollto"><i class="bx bx-book-content"></i> <span>Portfolio</span></a></li>
           <li><a href="#services" class="nav-link scrollto"><i class="bx bx-book-reader" ></i> <span>Bibliothèque</span></a></li>
-          <li><a href="inner-page-dataviz.html" class="nav-link scrollto"><i class="bx bx-line-chart"></i> <span>DataViz</span></a></li>
         </ul>
       </nav><!-- .nav-menu -->
     </div>
@@ -304,7 +303,7 @@
       </div>
     </section><!-- End Resume Section -->
 
-    <!-- ======= Portfolio Section ======= -->
+    <!-- ======= Portfolio Section ======= 
     <section id="portfolio" class="portfolio section-bg">
       <div class="container">
 
@@ -359,55 +358,7 @@
       </form>
 
       <div class="row" id="filter-records" style="position:relative; top:50px"></div>
-
-      <script type="text/javascript">
-          $(document).ready(function(){
-
-            $('#txt-search').keyup(function(){
-                var searchField = $(this).val();
-                if(searchField === '')  {
-                  $('#filter-records').html('');
-                  return;
-                }
-
-                var regex = new RegExp(searchField, "i");
-                var output = '';
-                var count = 1;
-                $.each(books, function(key, val){
-                  if ((val.Titre.search(regex) != -1) || (val.Auteurs.search(regex) != -1)) {
-
-                  if (val.Format == "Néant") {
-                    var format = " non disponible";
-                  } else if (val.Format == "Aucun") {
-                    var format = " non disponible";
-                  } else {
-                    var format = " format " + val.Format;
-                  }
-
-                  output += '<div class="col-lg-4 col-md-6 icon-box" data-aos="fade-up" data-aos-delay="100">';
-                  output += '<div class="icon"><i class="bx bx-book-reader"></i></div>';
-                  output += '<p class="description">' + val.Auteurs + '</p>';
-                  output += '<h4 class="title">' + val.Titre + '</h4>';
-
-                  output += '<p class="description">Publié en ' + val.Publication + ', ' + val.Pages + ' pages, ' + format + '</p>'
-                  output += '</div>';
-
-                  count++;
-                  }
-                });
-                if(count == 1){
-                  output += '<div class="col-lg-4 col-md-6 icon-box" data-aos="fade-up">';
-                  output += '<div class="icon"><i class="bi bi-exclamation-circle"></i></div>';
-                  output += '<h4 class="title">Aucun livre trouvé</h4>';
-                  output += '<p class="description">Essayer encore</p>'
-                  output += '</div>';
-                }
-
-                $('#filter-records').html(output);
-              });
-          });
-      </script>
-
+		<script type="text/javascript" src="assets/js/bibliosearch.js"></script>
       </div>
     </section><!-- End Services Section -->
 
