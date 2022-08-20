@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>Jean-Marie Antonietti</title>
+  <meta content="Personal page of Jean-Marie Antonietti" name="description">
+  <meta content="Jean-Marie Antonietti" name="author">
+  <meta content="" name="keywords">
+
+  <!-- Favicons -->
+  <link href="assets/img/favicon-32x32.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Raleway:300,300i,400,400i,500,500i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Template Main CSS File -->
+  <link href="assets/css/style.css" rel="stylesheet">
+
+  <!-- =======================================================
+  * Template Name: iPortfolio - v3.8.0
+  * Template URL: https://bootstrapmade.com/iportfolio-bootstrap-portfolio-websites-template/
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+  
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/d3-array"></script>
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/d3-geo"></script>
+    
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
+    <!-- Uncomment this line if you want to dataTool extension
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.3.3/dist/extension/dataTool.min.js"></script>
+    -->
+    <!-- Uncomment this line if you want to use gl extension
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts-gl@2/dist/echarts-gl.min.js"></script>
+    -->
+    <!-- Uncomment this line if you want to echarts-stat extension
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts-stat@latest/dist/ecStat.min.js"></script>
+    -->
+    <!-- Uncomment this line if you want to use map
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/china.js"></script>
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"></script>
+    -->
+    <!-- Uncomment these two lines if you want to use bmap extension
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=YOUR_API_KEY"></script>
+    <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.3.3/dist/extension/bmap.min.js"></script>
+    -->
+
+    <script type="text/javascript" src="data.js"></script>
+    <script type="text/javascript" src="assets/data/biblio_books.js"></script>
+    <script type="text/javascript" src="assets/data/geo_world.js"></script>
+    <script type="text/javascript" src="assets/jsgraph/options.js"></script>  
+
+</head>
+
+<body>
+
+  <!-- ======= Mobile nav toggle button ======= -->
+  <i class="bi bi-list mobile-nav-toggle d-xl-none"></i>
+
+  <!-- ======= Header ======= -->
+  <header id="header">
+    <div class="d-flex flex-column">
+
+      <div class="profile">
+        <img src="assets/img/profile-img.jpg" alt="" class="img-fluid rounded-circle">
+        <h1 class="text-light"><a href="index.html">Jean-Marie Antonietti</a></h1>
+        <div class="social-links mt-3 text-center">
+          <a href="https://github.com/jmanto" class="github"><i class="bi bi-github"></i></a>
+        </div>
+      </div>
+
+      <nav id="navbar" class="nav-menu navbar">
+        <ul>
+          <li><a href="index.html#hero" class="nav-link scrollto active"><i class="bx bx-home"></i> <span>Home</span></a></li>
+          <li><a href="index.html#about" class="nav-link scrollto"><i class="bx bx-user"></i> <span>A propos</span></a></li>
+          <li><a href="index.html#resume" class="nav-link scrollto"><i class="bx bx-file-blank"></i> <span>Curriculum Vitae</span></a></li>
+          <li><a href="books.html" class="nav-link scrollto"><i class="bx bx-book-reader" ></i> <span>Bibliothèque</span></a></li>
+          <li><a href="booksGraph.html" class="nav-link scrollto"><i class="bx bx-line-chart" ></i> <span>Visualisation</span></a></li>
+ 	    </ul>
+      </nav>
+    </div>
+  </header><!-- End Header -->
+
+  <main id="main">
+
+    <!-- ======= Breadcrumbs ======= -->
+    <section class="breadcrumbs">
+      <div class="container">
+
+        <div class="d-flex justify-content-between align-items-center">
+          <h2>Graphiques</h2>
+          <ol>
+            <li><a href="index.html#hero">Home</a></li>
+            <li>Graphiques</li>
+          </ol>
+        </div>
+
+      </div>
+    </section><!-- End Breadcrumbs -->
+
+<!--
+    <section id="about" class="about">
+      <div class="container"> -->
+
+    <section class="inner-page">
+      <div class="container">
+        <div class="section-title">
+          <h2>Date de publication</h2>
+          <p>Le graphique ci-dessous représente les date d'écriture ou de publication des différentes oeuvres, réparties par continent. Ces dates correspondent, 
+		  autant que possible, à la date de première publication ou à la date d'écriture de la première version publiée d'une oeuvre. Si l'écriture s'est étendue 
+		  pendant plusieurs années, la date la plus récente est utilisée. Si un ouvrage comprend plusieurs oeuvres, tel qu'un recueil de nouvelles, l'oeuvre qui donne 
+		  le titre à l'ouvrage, ou sinon la plus connue ou représentative, sert pour la datation.
+		  Pour les oeuvres publiées à titre posthume, la date indiquée est soit la date supposée d'écriture,
+		  soit celle de la première publication, sans qu'une systématique puisse être garantie. Pour les oeuvres antiques attribuée à un auteur, la date de la mort de cet auteur 
+		  est conservée comme date de publication. Finalement, pour les oeuvres anonymes (contes, légendes, épopées), une date approximative, au milieu des dates de début de 
+		  formation et de diffusion estimées pour cette oeuvre, est déterminée.</p>
+        </div>
+
+        
+            <div id="container_scatter_single"></div>
+            
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('container_scatter_single'), null, {
+    //            width: 800,
+                height: 400,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
+
+                myChart.setOption(option_scatter_single);
+                window.addEventListener('resize', myChart.resize);
+            </script>
+
+		</div>
+    </section>
+
+
+    <section class="inner-page">
+      <div class="container">
+        <div class="section-title">
+          <h2>Les auteurs autour du monde</h2>
+          <p>Texte</p>
+        </div>
+        
+            <div id="container_map_author"></div>
+            
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('container_map_author'), null, {
+    //            width: 800,
+                height: 800,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
+
+                const worldJson = low_res;
+                const projection_world = d3.geoEqualEarth();
+                echarts.registerMap('WORLD', worldJson);
+            
+                myChart.setOption(option_map_author);
+                window.addEventListener('resize', myChart.resize);
+            </script>
+
+		</div>
+    </section>
+	
+	
+    <section class="inner-page">
+      <div class="container">
+        <div class="section-title">
+          <h2>Les livres autour du monde</h2>
+          <p>Texte</p>
+        </div>
+        
+            <div id="container_map_book"></div>
+            
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('container_map_book'), null, {
+    //            width: 800,
+                height: 800,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
+
+ //               const worldJson = low_res;
+ //               const projection_world = d3.geoEqualEarth();
+ //               echarts.registerMap('WORLD', worldJson);
+            
+                myChart.setOption(option_map_book);
+                window.addEventListener('resize', myChart.resize);
+            </script>
+
+		</div>
+    </section>
+
+
+    <section class="inner-page">
+      <div class="container">
+        <div class="section-title">
+          <h2>Les livres autour du monde</h2>
+          <p>Une autre manière de la voir.</p>
+        </div>
+        
+            <div id="container_sunburn"></div>
+            
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('container_sunburn'), null, {
+    //            width: 800,
+                height: 800,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
+            
+                myChart.setOption(option_sunburn);
+                window.addEventListener('resize', myChart.resize);
+            </script>
+
+      </div>
+    </section>
+
+    </section>
+	
+  </main><!-- End #main -->
+
+  <!-- ======= Footer ======= -->
+  <footer id="footer">
+    <div class="container">
+      <div class="copyright">
+        &copy; Copyright <strong><span>iPortfolio</span></strong>
+      </div>
+      <div class="credits">
+        Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+      </div>
+    </div>
+  </footer><!-- End  Footer -->
+
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+	
+  <!-- Vendor JS Files -->
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/vendor/typed.js/typed.min.js"></script>
+  <script src="assets/vendor/waypoints/noframework.waypoints.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+
+  <!-- Template Main JS File -->
+  <script src="assets/js/main.js"></script>
+
+</body>
+
+</html>
