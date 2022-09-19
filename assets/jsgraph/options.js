@@ -133,7 +133,8 @@
           }
         },
 		nameProperty: 'NAME_FR',
-        data: authorStat
+        data: authorStat,
+		roam: true
       }
     ]
   };
@@ -183,7 +184,8 @@
           }
         },
 		nameProperty: 'NAME_FR',
-        data: bookStat
+        data: bookStat,
+		roam: true
       }
     ]
   };
@@ -196,6 +198,7 @@
     },
     visualMap: {
       left: 'none',
+      top: 'middle',
       min: 0,
       max: 5,
       inRange: {
@@ -334,8 +337,6 @@ var _rawData;
   _rawData = chronos;
 
   option_chronology = makeOption();
-  //myChart.setOption((option = makeOption()));
-	console.log("CHRONO", option_chronology);
 
 function makeOption() {
   return {
