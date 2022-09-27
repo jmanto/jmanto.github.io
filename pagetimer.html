@@ -109,6 +109,7 @@
         </div>
 
         <p id="demo" style="align: center;"></p> 
+        <p id="ratio" style="align: center;"></p> 
 
 
       </div>
@@ -166,7 +167,7 @@ var x = setInterval(function() {
    
   // Find the distance between now and the count down date
   var distance = countDownDate - now;
-  var ratio = 1 - distance / distanceWhole;
+  var ratio = 100 * (1 - distance / distanceWhole);
   
   // Time calculations for days, hours, minutes and seconds
   var days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -175,15 +176,17 @@ var x = setInterval(function() {
   var seconds = Math.floor((distance % (1000 * 60)) / 1000);
     
   // Output the result in an element with id="demo"
-  document.getElementById("demo").innerHTML = days + "jours " + hours + "heures "
-  + minutes + "minutes " + seconds + "secondes ratio" + ratio;
-    
+  document.getElementById("demo").innerHTML = days + "j " + hours + "h "
+  + minutes + "min ";
+   document.getElementById("ratio").innerHTML = ratio + "% ";
+   
   // If the count down is over, write some text 
   if (distance < 0) {
     clearInterval(x);
     document.getElementById("demo").innerHTML = "EXPIRED";
+    document.getElementById("ratio").innerHTML = "EXPIRED";
   }
-}, 1000);
+}, 60000);
 </script>
 	
 </body>
