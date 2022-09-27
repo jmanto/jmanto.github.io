@@ -104,19 +104,10 @@
     <section class="inner-page">
       <div class="container">
         <div class="section-title">
-          <h2>Date de publication</h2>
-          <p>Le graphique ci-dessous représente les date d'écriture ou de publication des différentes oeuvres, réparties par continent. Ces dates correspondent, 
-		  autant que possible, à la date de première publication ou à la date d'écriture de la première version publiée d'une oeuvre. Si l'écriture s'est étendue 
-		  pendant plusieurs années, la date la plus récente est utilisée. Si un ouvrage comprend plusieurs oeuvres, tel qu'un recueil de nouvelles, l'oeuvre qui donne 
-		  le titre à l'ouvrage, ou sinon la plus connue ou représentative, sert pour la datation.
-		  Pour les oeuvres publiées à titre posthume, la date indiquée est soit la date supposée d'écriture,
-		  soit celle de la première publication, sans qu'une systématique puisse être garantie. Pour les oeuvres antiques attribuée à un auteur, la date de la mort de cet auteur 
-		  est conservée comme date de publication. Finalement, pour les oeuvres anonymes (contes, légendes, épopées), une date approximative, au milieu des dates de début de 
-		  formation et de diffusion estimées pour cette oeuvre, est déterminée.</p>
+          <h2>Compte à rebours</h2>
         </div>
 
-       <p id="demo"></p> <script>// Set the date we're counting down tovar countDownDate = new Date("Jan 5, 2021 15:37:25").getTime(); // Update the count down every 1 secondvar x = setInterval(function() { // Get today's date and time var now = new Date().getTime(); // Find the distance between now and the count down date var distance = countDownDate - now; // Time calculations for days, hours, minutes and seconds var days = Math.floor(distance / (1000 * 60 * 60 * 24)); var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)); var seconds = Math.floor((distance % (1000 * 60)) / 1000); // Output the result in an element with id="demo" document.getElementById("demo").innerHTML = days + "d " + hours + "h " + minutes + "m " + seconds + "s "; // If the count down is over, write some text if (distance < 0) { clearInterval(x); document.getElementById("demo").innerHTML = "EXPIRED"; }}, 1000);</script>
- 
+       <p id="demo"></p> 
 
 
 	</div>
