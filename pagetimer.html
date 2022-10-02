@@ -109,9 +109,9 @@
         </div>
 
         <p id="demo" style="text-align: center;"></p> 
-        <p id="ratio" style="text-align: center; text-color: green;"></p> 
+        <p id="ratio" style="text-align: center; color: green;"></p> 
 
-        <p id="ratio1" style="text-align: center; text-color: red;"></p> 
+        <p id="ratio1" style="text-align: center; color: red;"></p> 
 
 
       </div>
@@ -188,22 +188,7 @@ var dist = mytimer();
 // Update the count down every 1 second
 var x = setInterval(function() {
 
-  // Get today's date and time
-  var now = new Date().getTime();
-   
-  // Find the distance between now and the count down date
-  var distance = countDownDate - now;
-  var ratio = 100 * (1 - distance / distanceWhole);
-  
-  // Time calculations for days, hours, minutes and seconds
-  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
-  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-  // Output the result in an element with id="demo"
-  document.getElementById("demo").innerHTML = days + "j " + hours + "h " + minutes + "min";
-  document.getElementById("ratio").innerHTML = ratio.toFixed(1) + "%";
+  var distance = mytimer()
    
   // If the count down is over, write some text 
   if (distance < 0) {
@@ -211,7 +196,7 @@ var x = setInterval(function() {
     document.getElementById("demo").innerHTML = "EXPIRED";
     document.getElementById("ratio").innerHTML = "EXPIRED";
   }
-}, 60000);
+}, 10000);
 </script>
 	
 </body>
