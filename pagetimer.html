@@ -109,9 +109,9 @@
         </div>
 
         <p id="demo" style="text-align: center;"></p> 
-        <p id="ratio" style="text-align: center;"></p> 
+        <p id="ratio" style="text-align: center; text-color: green;"></p> 
 
-        <p id="ratio1" style="text-align: center;"></p> 
+        <p id="ratio1" style="text-align: center; text-color: red;"></p> 
 
 
       </div>
@@ -156,7 +156,7 @@
 
 <script>
 // Set the date we're counting down to
-var countDownDate = new Date("Oct 3, 2022 19:00:00").getTime();
+var countDownDate = new Date("Oct 3, 2022 21:00:00").getTime();
 var countUpDate = new Date("Sep 26, 2022 9:00:00").getTime();
 
 var distanceWhole = countDownDate - countUpDate;
@@ -203,7 +203,7 @@ var x = setInterval(function() {
     
   // Output the result in an element with id="demo"
   document.getElementById("demo").innerHTML = days + "j " + hours + "h " + minutes + "min";
-  document.getElementById("ratio").innerHTML = ratio.toFixed(2) + "%";
+  document.getElementById("ratio").innerHTML = ratio.toFixed(1) + "%";
    
   // If the count down is over, write some text 
   if (distance < 0) {
