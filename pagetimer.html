@@ -111,6 +111,8 @@
         <p id="demo" style="text-align: center;"></p> 
         <p id="ratio" style="text-align: center;"></p> 
 
+        <p id="ratio1" style="text-align: center;"></p> 
+
 
       </div>
     </section>
@@ -158,6 +160,30 @@ var countDownDate = new Date("Oct 3, 2022 19:00:00").getTime();
 var countUpDate = new Date("Sep 26, 2022 9:00:00").getTime();
 
 var distanceWhole = countDownDate - countUpDate;
+
+function mytimer() {
+
+  // Get today's date and time
+  var now = new Date().getTime();
+   
+  // Find the distance between now and the count down date
+  var distance = countDownDate - now;
+  var ratio = 100 * (1 - distance / distanceWhole);
+  
+  // Time calculations for days, hours, minutes and seconds
+  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+    
+  // Output the result in an element with id="demo"
+  document.getElementById("demo").innerHTML = days + "j " + hours + "h " + minutes + "min";
+  document.getElementById("ratio1").innerHTML = ratio.toFixed(4) + "%";
+  
+  return distance;
+}
+
+var dist = mytimer();
 
 // Update the count down every 1 second
 var x = setInterval(function() {
