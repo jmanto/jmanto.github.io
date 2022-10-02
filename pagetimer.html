@@ -109,10 +109,7 @@
         </div>
 
         <p id="demo" style="text-align: center;"></p> 
-        <p id="ratio" style="text-align: center; color: green;"></p> 
-
-        <p id="ratio1" style="text-align: center; color: red;"></p> 
-
+        <p id="ratio" style="text-align: center;"></p> 
 
       </div>
     </section>
@@ -178,7 +175,7 @@ function mytimer() {
     
   // Output the result in an element with id="demo"
   document.getElementById("demo").innerHTML = days + "j " + hours + "h " + minutes + "min";
-  document.getElementById("ratio1").innerHTML = ratio.toFixed(4) + "%";
+  document.getElementById("ratio").innerHTML = ratio.toFixed(4) + "%";
   
   return distance;
 }
@@ -196,7 +193,7 @@ var x = setInterval(function() {
     document.getElementById("demo").innerHTML = "EXPIRED";
     document.getElementById("ratio").innerHTML = "EXPIRED";
   }
-}, 10000);
+}, 60000);
 </script>
 	
 </body>
