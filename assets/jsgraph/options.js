@@ -1,84 +1,84 @@
 // -----------------------------------------------
 // Scatter Plots
 // -----------------------------------------------
-// const continents = ["Europe", "Asie", "Am\u00e9rique", "Afrique", "Oc\u00e9anie"];
+const continents = ["Europe", "Asie", "Afrique", "Am\u00e9rique", "Oc\u00e9anie"];
 
-// const data = publication_byYear
-    // .map(function (item) {
-    // return [item[1], item[0], item[2]];
-    // });
+const data = publication_byYear
+    .map(function (item) {
+    return [item["Publication"], item["Continent"], item["Status"]];
+    });	
 
-// option_scatter_single = {
+option_scatter_single = {
 
-    // visualMap: {
-      // type: 'piecewise',
-      // show: false, 
-      // dimension: 1,
-      // min: 0,
-      // max: 4,
-      // inRange: {
-        // color: ['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-      // },
-    // },
-  // toolbox: {
-      // show: true,
-//      orient: 'vertical',
-      // left: 'left',
-      // top: 'top',
-    // feature: {
-      // dataZoom: {
-        // yAxisIndex: 'none'
-      // },
-      // restore: {}
-    // }
-  // },
-  // tooltip: {
-    // position: 'top',
-    // formatter: function (params) {
-      // return (params.value[2] + ' livres');
-    // }
-  // },
-  // grid: {
-    // left: 2,
-    // bottom: 10,
-    // right: 10,
-    // containLabel: true
-  // },
-  // xAxis: {
-    // type: 'value',
-	// min: -1500,
-	// max: 2100,
-    // boundaryGap: false,
-    // splitLine: {
-      // show: true
-    // },
-    // axisLine: {
-      // show: false
-    // },
-	// axisLabel: {fontSize: 14}
-  // },
-  // yAxis: {
-    // type: 'category',
-    // data: continents,
-    // axisLine: {
-      // show: false
-    // },
-	// axisLabel: {fontSize: 14}
-  // },
-  // series: [
-    // {
-      // name: 'Publication',
-      // type: 'scatter',
-      // symbolSize: function (val) {
-        // return 10 + val[2] * 2;
-      // },
-      // itemStyle: {
-        // opacity: 0.4
-        // },
-      // data: data      
-    // }
-  // ]
-// };
+    visualMap: {
+      type: 'piecewise',
+      show: false, 
+      dimension: 1,
+      min: 0,
+      max: 4,
+      inRange: {
+        color: ['#e41a1c','#377eb8', '#984ea3', '#4daf4a', '#ff7f00']
+      },
+    },
+	toolbox: {
+      show: true,
+      orient: 'horizontal',
+      left: 'center',
+      top: 'top',
+      feature: {
+        dataZoom: {
+          yAxisIndex: 'none'
+        },
+      restore: {}
+      } 
+    },
+	  tooltip: {
+		position: 'top',
+		formatter: function (params) {
+		  return (params.value[2] + ' livres');
+		}
+  },
+  grid: {
+    left: 2,
+    bottom: 10,
+    right: 10,
+    containLabel: true
+  },
+  xAxis: {
+    type: 'value',
+	min: -1500,
+	max: 2030,
+    boundaryGap: false,
+    splitLine: {
+      show: true
+    },
+    axisLine: {
+      show: false
+    },
+	axisLabel: {fontSize: 14}
+  },
+  yAxis: {
+    type: 'category',
+    data: continents,
+    axisLine: {
+      show: false
+    },
+	axisLabel: {fontSize: 14}
+  },
+  series: [
+    {
+      name: 'Publication',
+      type: 'scatter',
+      symbolSize: function (val) {
+        return 10 * Math.sqrt(val[2]);
+      },
+      itemStyle: {
+        opacity: 0.4
+        },
+      data: data      
+    }
+  ]
+};
 
 // -----------------------------------------------
 // Cartes
@@ -90,25 +90,32 @@
       showDelay: 0,
       transitionDuration: 0.2
     },
-    visualMap: {
+	visualMap: {
+      type: 'piecewise',
+      show: true, 
       left: 'none',
       top: 'middle',
+      dimension: 0,
       min: 0,
       max: 500,
+	  pieces: [
+		{min: 400, label: 'Plus de 400'},
+		{min: 100, max: 400, label: 'Entre 100 et 400'},
+		{min: 50, max: 100, label: 'Entre 50 et 100'},
+		{min: 10, max: 50, label: 'Entre 10 et 50'},
+		{min: 5, max: 10, label: 'Entre 5 et 10'},
+		{min: 1, max: 5, label: 'Entre 1 et 5'},
+		{min: 0, max: 1, label: 'Aucun auteur'},
+	  ],
       inRange: {
-        color: ['#f7fcf5','#e5f5e0','#c7e9c0','#a1d99b','#74c476','#41ab5d','#238b45','#006d2c','#00441b']
+        color: ["#fef0d9","#fdd49e","#fdbb84","#fc8d59","#ef6548","#d7301f","#990000"]
       },
-	  outOfRange: {
-		color: ['rgba(255, 255, 255, 0.4)'],
-	  },
-		  
-     text: ['High', 'Low'],
      calculable: true
     },
-    toolbox: {
+	toolbox: {
       show: true,
-      //orient: 'vertical',
-      left: 'left',
+      orient: 'horizontal',
+      left: 'center',
       top: 'top',
       feature: {
         restore: {}
@@ -145,25 +152,37 @@
       showDelay: 0,
       transitionDuration: 0.2
     },
-    visualMap: {
+	visualMap: {
+      type: 'piecewise',
+      show: true, 
       left: 'none',
       top: 'middle',
+      dimension: 0,
       min: 0,
-      max: 1100,
+      max: 500,
+	  pieces: [
+		{min: 1000, label: 'Plus de 1000'},
+		{min: 500, max: 1000, label: 'Entre 500 et 1000'},
+		{min: 100, max: 500, label: 'Entre 100 et 500'},
+		{min: 50, max: 100, label: 'Entre 50 et 100'},
+		{min: 10, max: 50, label: 'Entre 10 et 50'},
+		{min: 5, max: 10, label: 'Entre 5 et 10'},
+		{min: 1, max: 5, label: 'Entre 1 et 5'},
+		{min: 0, max: 1, label: 'Aucun livre'},
+	  ],
       inRange: {
-        color: ['#f7fcf5','#e5f5e0','#c7e9c0','#a1d99b','#74c476','#41ab5d','#238b45','#006d2c','#00441b']
+        color: ["#ffffcc","#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#005a32"]
       },
-     text: ['Max', 'Min'],
      calculable: true
     },
-    toolbox: {
+	toolbox: {
       show: true,
-      //orient: 'vertical',
-      left: 'left',
+      orient: 'horizontal',
+      left: 'center',
       top: 'top',
       feature: {
         restore: {}
-      }
+		}
     },
     series: [
       {
@@ -196,25 +215,31 @@
       showDelay: 0,
       transitionDuration: 0.2
     },
-    visualMap: {
+  visualMap: {
+    type: "piecewise",
+      show: true, 
       left: 'none',
       top: 'middle',
-      min: 0,
-      max: 5,
-      inRange: {
-        color: ['#e41a1c','#377eb8','#4daf4a','#984ea3','#ff7f00']
-      },
-	  outOfRange: {
-		color: ['rgba(255, 255, 255, 0.48)'],
-	  },
-		  
-     text: ['High', 'Low'],
-     calculable: true
-    },
-    toolbox: {
+    min: -0.5,
+    max: 5.5,
+	  pieces: [
+		{min: 5, max: 6, label: 'Antartique'},
+		{min: 4, max: 5, label: 'Océanie'},
+		{min: 3, max: 4, label: 'Amérique'},
+		{min: 2, max: 3, label: 'Afrique'},
+		{min: 1, max: 2, label: 'Asie'},
+		{min: 0, max: 1, label: 'Europe'},
+	  ],
+    calculable: true,
+    realtime: false,
+    inRange: {
+      color: ["#d73027","#fc8d59","#fee08b","#d9ef8b","#91cf60","#1a9850"]
+    }
+  },
+	toolbox: {
       show: true,
-      //orient: 'vertical',
-      left: 'left',
+      orient: 'horizontal',
+      left: 'center',
       top: 'top',
       feature: {
         restore: {}
@@ -249,7 +274,7 @@
 // -----------------------------------------------
 // Sunburn
 // -----------------------------------------------
-option_sunburn = {
+option_sunburn_1 = {
   visualMap: {
     type: 'continuous',
     orient: 'horizontal',
@@ -335,17 +360,23 @@ var _rawData;
 
 
   _rawData = chronos;
-
+  
   option_chronology = makeOption();
 
 function makeOption() {
   return {
     tooltip: {},
     animation: false,
-    title: {
-      text: 'Gantt of Airport Flight',
-      left: 'center'
-    },
+	toolbox: {
+      show: true,
+     orient: 'horizontal',
+      left: 'center',
+      top: 'top',
+    feature: {
+      dataZoom: {},
+      restore: {}
+    }
+  },
     dataZoom: [
       {
         type: 'slider',
@@ -354,10 +385,8 @@ function makeOption() {
         height: 20,
         bottom: 0,
         start: 0,
-        end: 26,
-        handleIcon:
-          'path://M10.7,11.9H9.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4h1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
-        handleSize: '80%',
+        end: 100,
+		backgroundColor: '#ffb72700',
         showDetail: false
       },
       {
@@ -366,32 +395,29 @@ function makeOption() {
         xAxisIndex: 0,
         filterMode: 'weakFilter',
         start: 0,
-        end: 26,
+        end: 100,
         zoomOnMouseWheel: false,
         moveOnMouseMove: true
       },
       {
         type: 'slider',
         yAxisIndex: 0,
-        zoomLock: true,
+        filterMode: 'weakFilter',
         width: 10,
         right: 10,
-        top: 70,
-        bottom: 20,
-        start: 95,
+        start: 0,
         end: 100,
-        handleSize: 0,
+		backgroundColor: '#ffb72700',
         showDetail: false
       },
       {
         type: 'inside',
         id: 'insideY',
         yAxisIndex: 0,
-        start: 95,
+        start: 0,
         end: 100,
         zoomOnMouseWheel: false,
-        moveOnMouseMove: true,
-        moveOnMouseWheel: true
+        moveOnMouseMove: true
       }
     ],
     grid: {
@@ -401,7 +427,8 @@ function makeOption() {
       left: 100,
       right: 20,
       backgroundColor: '#fff',
-      borderWidth: 0
+      borderWidth: 2,
+	  borderColor: '#000'
     },
     xAxis: {
       type: 'value',
@@ -409,34 +436,36 @@ function makeOption() {
       splitLine: {
         show: true,
         lineStyle: {
-          color: ['#38dbff']
+          color: ['#aaa']
         }
       },
       axisLine: {
-        show: true
+        show: false
       },
       axisTick: {
         lineStyle: {
-          color: '#ba929f'
+          color: '#aaa'
         }
       },
       axisLabel: {
-        color: '#ba929f',
+        color: '#000',
         inside: false,
         align: 'center'
-      }
+      },
+	  min: -1500,
+	  max: 2020
     },
     yAxis: {
-      axisTick: { show: true },
-      splitLine: { show: true },
-      axisLine: { show: true },
-      axisLabel: { show: true },
+      axisTick: { show: false },
+      splitLine: { show: false },
+      axisLine: { show: false },
+      axisLabel: { show: false },
       min: 0,
       max: _rawData.author.data.length
     },
     series: [
       {
-        id: 'flightData',
+        id: 'bookData',
         type: 'custom',
         renderItem: renderGanttItem,
         dimensions: _rawData.author.dimensions,
@@ -450,6 +479,8 @@ function makeOption() {
     ]
   };
 }
+
+
 function renderGanttItem(params, api) {
   var categoryIndex = api.value(DIM_CATEGORY_INDEX);
   var timeArrival = api.coord([api.value(DIM_TIME_ARRIVAL), categoryIndex]);
@@ -505,12 +536,6 @@ function renderGanttItem(params, api) {
         shape: rectNormal,
         style: api.style({fill: color})
       },
-//      {
-//        type: 'rect',
-//        ignore: !rectVIP && !api.value(4),
-//        shape: rectVIP,
-//        style: api.style({ fill: '#ddb30b' }) // yellow
-//      },
       {
         type: 'rect',
         ignore: !rectText,
