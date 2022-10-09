@@ -38,7 +38,11 @@
     <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/d3-geo"></script>
     
     <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.3.3/dist/echarts.min.js"></script>
-    <!-- Uncomment this line if you want to dataTool extension
+    
+	
+	<!-- import vintage theme -->
+	<script src="roma.js"></script>
+<!-- Uncomment this line if you want to dataTool extension
     <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/echarts@5.3.3/dist/extension/dataTool.min.js"></script>
     -->
     <!-- Uncomment this line if you want to use gl extension
@@ -103,8 +107,9 @@
     <!-- </section><!-- End Breadcrumbs --> -->
 
     <section class="inner-page">
-      <div class="container">
+      <div class="container" style="padding-top: 50px;">
         <div class="section-title">
+          <span>Date de publication</span>
           <h2>Date de publication</h2>
           <p>Le graphique ci-dessous représente les date d'écriture ou de publication des différentes oeuvres, réparties par continent. Ces dates correspondent, 
 		  autant que possible, à la date de première publication ou à la date d'écriture de la première version publiée d'une oeuvre. Si l'écriture s'est étendue 
@@ -119,17 +124,17 @@
         
             <div id="container_scatter_single"></div>
             
-            <!-- <script type="text/javascript"> -->
-                <!-- var myChart = echarts.init(document.getElementById('container_scatter_single'), null, { -->
-    <!-- //            width: 800, -->
-                <!-- height: 800, -->
-                <!-- renderer: 'canvas', -->
-                <!-- useDirtyRect: false -->
-                <!-- }); -->
+            <script type="text/javascript">
+                myChart = echarts.init(document.getElementById('container_scatter_single'), 'roma', { 
+				width: 'auto',
+                height: 400,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
 
-                <!-- myChart.setOption(option_scatter_single); -->
-                <!-- window.addEventListener('resize', myChart.resize); -->
-            <!-- </script> -->
+                myChart.setOption(option_scatter_single);
+                window.addEventListener('resize', myChart.resize);
+            </script>
 
 		</div>
     </section>
@@ -140,7 +145,6 @@
         <div class="section-title">
           <span>Les auteurs autour du monde</span>
           <h2>Les auteurs autour du monde</h2>
-          <p>Texte</p>
         </div>
         
             <div id="container_map_author"></div>
@@ -148,7 +152,7 @@
             <script type="text/javascript">
                 var myChart = echarts.init(document.getElementById('container_map_author'), null, {
 				width: 'auto',
-                height: 800,
+                height: 600,
                 renderer: 'canvas',
                 useDirtyRect: false
                 });
@@ -170,7 +174,6 @@
         <div class="section-title">
           <span>Les livres autour du monde</span>
           <h2>Les livres autour du monde</h2>
-          <p>Texte</p>
         </div>
         
             <div id="container_map_book"></div>
@@ -178,7 +181,7 @@
             <script type="text/javascript">
                 var myChart = echarts.init(document.getElementById('container_map_book'), null, {
 				width: 'auto',
-                height: 800,
+                height: 600,
                 renderer: 'canvas',
                 useDirtyRect: false
                 });
@@ -202,7 +205,7 @@
             <script type="text/javascript">
                 var myChart = echarts.init(document.getElementById('container_map_continent'), null, {
 				width: 'auto',
-                height: 800,
+                height: 600,
                 renderer: 'canvas',
                 useDirtyRect: false
                 });
@@ -222,21 +225,21 @@
     <section class="inner-page">
       <div class="container">
         <div class="section-title">
+          <span>Les livres autour du monde</span>
           <h2>Les livres autour du monde</h2>
-          <p>Une autre manière de la voir.</p>
         </div>
         
-            <div id="container_sunburn"></div>
+            <div id="container_sunburn_1"></div>
             
             <script type="text/javascript">
-                var myChart = echarts.init(document.getElementById('container_sunburn'), null, {
+                var myChart = echarts.init(document.getElementById('container_sunburn_1'), null, {
 				width: 'auto',
                 height: 800,
                 renderer: 'canvas',
                 useDirtyRect: false
                 });
             
-                myChart.setOption(option_sunburn);
+                myChart.setOption(option_sunburn_1);
                 window.addEventListener('resize', myChart.resize);
             </script>
 
@@ -247,8 +250,8 @@
     <section class="inner-page">
       <div class="container">
         <div class="section-title">
+          <span>Les livres autour du monde</span>
           <h2>Les livres autour du monde</h2>
-          <p>Une autre manière de la voir.</p>
         </div>
         
             <div id="container_sunburn_2"></div>
@@ -268,7 +271,7 @@
       </div>
     </section>
 	
-  </main><!-- End #main -->
+  </main><!-- End #main
 
   <!-- ======= Footer ======= -->
   <footer id="footer">
