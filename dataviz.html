@@ -93,26 +93,11 @@
   
   <main id="main">
 
-    <!-- ======= Breadcrumbs ======= -->
-    <!-- <section class="breadcrumbs"> -->
-      <!-- <div class="container"> -->
-
-        <!-- <div class="d-flex justify-content-between align-items-center"> -->
-          <!-- <h2>Bibliothèque</h2> -->
-          <!-- <ol> -->
-            <!-- <li><a href="index.html">Home</a></li> -->
-            <!-- <li>Bibliothèque</li> -->
-          <!-- </ol> -->
-        <!-- </div> -->
-
-      <!-- </div> -->
-    <!-- </section><!-- End Breadcrumbs --> -->
-
     <section class="inner-page">
-      <div class="container">
+      <div class="container" style="padding-top: 50px;">
         <div class="section-title">
+          <span>Les régions du monde</span>
           <h2>Les régions du monde</h2>
-          <p>Texte</p>
         </div>
         
             <div id="container_map_continent"></div>
@@ -160,8 +145,30 @@
 		</div>
     </section>	
 
+    <section class="inner-page">
+      <div class="container">
+        <div class="section-title">
+          <span>Compte à rebours</span>
+          <h2>Compte à rebours</h2>
+        </div>
+        
+            <div id="container_countDown"></div>
+            
+            <script type="text/javascript">
+                var myChart = echarts.init(document.getElementById('container_countDown'), null, {
+				width: 'auto',
+                height: 800,
+                renderer: 'canvas',
+                useDirtyRect: false
+                });
+           
+                myChart.setOption(option_countDown);
+                window.addEventListener('resize', myChart.resize);
+            </script>
 
-	
+		</div>
+    </section>
+		
   </main><!-- End #main
 
   <!-- ======= Footer ======= -->

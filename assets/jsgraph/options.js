@@ -624,7 +624,424 @@ function clipRectByRect(params, rect) {
     width: params.coordSys.width,
     height: params.coordSys.height
   });
+};
+
+// -----------------------------------------------
+// Histogramme de l'^ge des auteurs (décédés)
+// -----------------------------------------------
+
+var scatter_data = histo_authors.map(function (item) {
+	return [item.Lifespan, item.Auteur];
+	});
+
+    option_histo_authors = {
+	  xAxis: {
+		type: 'value',
+		nameTextStyle: {
+			fontSize: 18,
+			fontWeight: 'bold',
+			padding: 10
+			},
+		name: "Âge au décès",
+		nameLocation: "middle"
+	  },
+	  yAxis: {
+		type: 'value',
+		nameTextStyle: {
+			fontSize: 18,
+			fontWeight: 'bold',
+			padding: 10
+			},
+		name: "Nombre d'auteurs",
+		nameLocation: "middle"
+	  },
+	  series: [
+		{
+		  data: scatter_data,
+		  type: 'bar'
+		}
+	  ]
+	};
+	
+
+// -----------------------------------------------
+// Compte à rebours
+// -----------------------------------------------
+
+    var option_countDown;
+
+    const gaugeDataD = [
+	  {
+		value: 20,
+		name: 'Jours',
+		title: {
+		  show: false,
+		},
+		detail: {
+		  valueAnimation: true,
+		  offsetCenter: ['0%', '-20%']
+		}
+	  }
+	];
+
+    const gaugeDataH = [
+	  {
+		value: 20,
+		name: 'Jours',
+		title: {
+		  show: false,
+		},
+		detail: {
+		  valueAnimation: true,
+		  offsetCenter: ['0%', '10%']
+		}
+	  }
+	];
+
+    const gaugeDataM = [
+	  {
+		value: 20,
+		name: 'Jours',
+		title: {
+		  show: false,
+		},
+		detail: {
+		  valueAnimation: true,
+		  offsetCenter: ['0%', '0%']
+		}
+	  }
+	];
+
+    const gaugeDataS = [
+	  {
+		value: 20,
+		name: 'Jours',
+		title: {
+		  show: false,
+		},
+		detail: {
+		  valueAnimation: true,
+		  offsetCenter: ['0%', '-10%']
+		}
+	  }
+	];
+
+option_countDown = {
+  series: [
+    {
+      type: 'gauge',
+      startAngle: 90,
+      endAngle: -270,
+	  min: 0,
+	  max: 365,
+	  radius: '85%',
+      pointer: {
+        show: false
+      },
+      progress: {
+        show: true,
+        overlap: false,
+        roundCap: true,
+        clip: false,
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: '#464646'
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          width: 40
+        }
+      },
+      splitLine: {
+        show: false,
+        distance: 0,
+        length: 10
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        show: false,
+        distance: 50
+      },
+      data: gaugeDataD,
+      title: {
+        fontSize: 14
+      },
+      detail: {
+        width: 50,
+        height: 14,
+        fontSize: 14,
+        color: 'auto',
+        borderColor: 'auto',
+        borderRadius: 20,
+        borderWidth: 1,
+        formatter: '{value} jours'
+      }
+    },
+    {
+      type: 'gauge',
+      startAngle: 90,
+      endAngle: -270,
+	  min: 0,
+	  max: 60,
+	  radius: '75%',
+      pointer: {
+        show: false
+      },
+      progress: {
+        show: true,
+        overlap: false,
+        roundCap: true,
+        clip: false,
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: '#464646'
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          width: 40
+        }
+      },
+      splitLine: {
+        show: false,
+        distance: 0,
+        length: 10
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        show: false,
+        distance: 50
+      },
+      data: gaugeDataH,
+      title: {
+        fontSize: 14
+      },
+      detail: {
+        width: 50,
+        height: 14,
+        fontSize: 14,
+        color: 'auto',
+        borderColor: 'auto',
+        borderRadius: 20,
+        borderWidth: 1,
+        formatter: '{value} heures'
+      }
+    },
+    {
+      type: 'gauge',
+      startAngle: 90,
+      endAngle: -270,
+	  min: 0,
+	  max: 60,
+	  radius: '65%',
+      pointer: {
+        show: false
+      },
+      progress: {
+        show: true,
+        overlap: false,
+        roundCap: true,
+        clip: false,
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: '#464646'
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          width: 40
+        }
+      },
+      splitLine: {
+        show: false,
+        distance: 0,
+        length: 10
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        show: false,
+        distance: 50
+      },
+      data: gaugeDataM,
+      title: {
+        fontSize: 14
+      },
+      detail: {
+        width: 50,
+        height: 14,
+        fontSize: 14,
+        color: 'auto',
+        borderColor: 'auto',
+        borderRadius: 20,
+        borderWidth: 1,
+        formatter: '{value} minutes'
+      }
+    },
+    {
+      type: 'gauge',
+      startAngle: 90,
+      endAngle: -270,
+	  min: 0,
+	  max: 60,
+	  radius: '55%',
+      pointer: {
+        show: false
+      },
+      progress: {
+        show: true,
+        overlap: false,
+        roundCap: true,
+        clip: false,
+        itemStyle: {
+          borderWidth: 1,
+          borderColor: '#464646'
+        }
+      },
+      axisLine: {
+        lineStyle: {
+          width: 40
+        }
+      },
+      splitLine: {
+        show: false,
+        distance: 0,
+        length: 10
+      },
+      axisTick: {
+        show: false
+      },
+      axisLabel: {
+        show: false,
+        distance: 50
+      },
+      data: gaugeDataS,
+      title: {
+        fontSize: 14
+      },
+      detail: {
+        width: 50,
+        height: 14,
+        fontSize: 14,
+        color: 'auto',
+        borderColor: 'auto',
+        borderRadius: 20,
+        borderWidth: 1,
+        formatter: '{value} secondes'
+      }
+    }
+  ]
+};
+
+// Set the date we're counting down to
+var countDownDate = new Date("Dec 23, 2022 12:00:00").getTime();
+var countUpDate = new Date("Oct 10, 2022 6:30:00").getTime();
+
+var distanceWhole = countDownDate - countUpDate;
+
+function mytimer() {
+
+  // Get today's date and time
+  var now = new Date().getTime();
+   
+  // Find the distance between now and the count down date
+  var distance = countDownDate - now;
+  var ratio = 100 * (1 - distance / distanceWhole);
+  
+  // Time calculations for days, hours, minutes and seconds
+  var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+  var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+  var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+  
+  return [days, hours, minutes, seconds, ratio];
 }
+
+var dist = mytimer();
+
+setInterval(function () {
+
+	[d, h, m, s, r] = mytimer();
+	
+  myChart.setOption({
+    series: [
+      {
+        type: 'gauge',
+		title: {
+		  show: false,
+		},
+        data: [
+          {
+            value: d,
+            name: 'Jours'
+          }
+        ],
+		detail: {
+		  valueAnimation: true,
+		  width: 120,
+		  offsetCenter: ['0%', '-20%']
+		}
+      },
+      {
+        type: 'gauge',
+		title: {
+		  show: false,
+		},
+        data: [
+          {
+            value: h,
+            name: 'Heures'
+          }
+        ],
+		detail: {
+		  valueAnimation: true,
+		  width: 120,
+		  offsetCenter: ['0%', '-10%']
+		}
+      },
+      {
+        type: 'gauge',
+		title: {
+		  show: false,
+		},
+        data: [
+          {
+            value: m,
+            name: 'Minutes'
+          }
+        ],
+		detail: {
+		  valueAnimation: true,
+		  width: 120,
+		  offsetCenter: ['0%', '3%']
+		}
+      },
+      {
+        type: 'gauge',
+		title: {
+		  show: false,
+		},
+        data: [
+          {
+            value: s,
+            name: 'Secondes'
+          }
+        ],
+		detail: {
+		  valueAnimation: true,
+		  width: 120,
+		  offsetCenter: ['0%', '20%']
+		}
+      }
+    ]
+  });
+}, 1000);	
 
 
   
