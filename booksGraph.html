@@ -157,7 +157,7 @@
                 useDirtyRect: false
                 });
 
-                const worldJson = ress; //low_res;
+                const worldJson = ress;
                 const projection_world = d3.geoEqualEarth();
                 echarts.registerMap('WORLD', worldJson);
             
@@ -192,35 +192,6 @@
 
 		</div>
     </section>
-
-    <section class="inner-page">
-      <div class="container">
-        <div class="section-title">
-          <h2>Les régions du monde</h2>
-          <p>Texte</p>
-        </div>
-        
-            <div id="container_map_continent"></div>
-            
-            <script type="text/javascript">
-                var myChart = echarts.init(document.getElementById('container_map_continent'), null, {
-				width: 'auto',
-                height: 600,
-                renderer: 'canvas',
-                useDirtyRect: false
-                });
-
- //               const worldJson = low_res;
- //               const projection_world = d3.geoEqualEarth();
- //               echarts.registerMap('WORLD', worldJson);
-            
-                myChart.setOption(option_map_continent);
-                window.addEventListener('resize', myChart.resize);
-            </script>
-
-		</div>
-    </section>
-	
 
     <section class="inner-page">
       <div class="container">
