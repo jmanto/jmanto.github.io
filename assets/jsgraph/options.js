@@ -750,7 +750,7 @@ option_countDown = {
       },
       axisLine: {
         lineStyle: {
-          width: 40
+          width: 30
         }
       },
       splitLine: {
@@ -802,7 +802,7 @@ option_countDown = {
       },
       axisLine: {
         lineStyle: {
-          width: 40
+          width: 30
         }
       },
       splitLine: {
@@ -854,7 +854,7 @@ option_countDown = {
       },
       axisLine: {
         lineStyle: {
-          width: 40
+          width: 30
         }
       },
       splitLine: {
@@ -906,7 +906,7 @@ option_countDown = {
       },
       axisLine: {
         lineStyle: {
-          width: 40
+          width: 30
         }
       },
       splitLine: {
