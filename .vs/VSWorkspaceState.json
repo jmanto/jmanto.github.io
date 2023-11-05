@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\assets",
+    "\\assets\\img"
   ],
-  "SelectedNode": "\\index.html",
+  "SelectedNode": "\\assets\\img\\20220904_090322.jpg",
   "PreviewInSolutionExplorer": false
 }
