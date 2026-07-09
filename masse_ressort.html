@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Masse-ressort vertical — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018;
+    --panel: #0d1a26;
+    --trace: #5ee6b5;
+    --trace-dim: #2b6e57;
+    --grid: #12293a;
+    --text: #cfe8dd;
+    --text-dim: #6f8f8a;
+    --accent: #ff8c5a;
+    --bleu: #5aa9e6;
+    --bleufonce: #2f5f8f;
+    --vert: #5ee6b5;
+    --violet: #b28cf0;
+    --rouge: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    /* background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; */
+    color: var(--text);
+    font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh;
+    padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 24px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  .buttons { display: flex; gap: 10px; }
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--trace-dim);
+    padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.03em;
+    cursor: pointer; border-radius: 2px;
+  }
+  button:hover { border-color: var(--trace); color: var(--trace); }
+  button:disabled { opacity: 0.35; cursor: default; }
+  .results { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  canvas { background: #0d1a26; border-radius: 2px; }
+  .canvas-label { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.05em; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Mouvements oscillants</div>
+    <h1>Système masse-ressort vertical</h1>
+    <div class="sub">Intégration de l'équation du mouvement (SciPy) en temps réel — rendu sur canvas HTML pour rester fluide.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Raideur du ressort k (N/m) <span class="val" id="kVal">10.0</span></label>
+        <input type="range" id="k" min="1" max="50" step="0.5" value="10">
+      </div>
+      <div class="ctrl">
+        <label>Position initiale z₀ (m) <span class="val" id="z0Val">0.0</span></label>
+        <input type="range" id="z0" min="-8" max="8" step="0.1" value="0">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="canvasSchema" width="180" height="460"></canvas>
+        <div class="canvas-label">masse — ressort</div>
+      </div>
+      <div>
+        <canvas id="canvasEnergie" width="640" height="460"></canvas>
+        <div class="canvas-label">énergies (cinétique · pesanteur · élastique · mécanique)</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Le calcul (intégration de l'équation différentielle via <code>scipy.integrate.solve_ivp</code>) s'exécute en Python dans le navigateur via Pyodide ; le dessin est effectué sur &lt;canvas&gt; pour garder l'animation fluide. Aucune donnée n'est envoyée à un serveur.
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de la logique physique de votre script
+   PyQt6 (fonction fun(), init(), update_plot()). Aucune dépendance à Qt ou
+   Matplotlib ici : uniquement le calcul numérique.
+   ============================================================================ */
+
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+G_TERRE = 9.81  # équivalent de pc.g_terre
+
+_state = {}
+
+def init_state(k, m, z0):
+    _state['k'] = k
+    _state['m'] = m
+    _state['t'] = 0.0
+    _state['y'] = [z0, 0.0]  # [position, vitesse]
+    return _state['y'][0], _state['y'][1]
+
+def set_k(k):
+    _state['k'] = k
+
+def deriv(t, x, k, m):
+    v = x[1]
+    a = -G_TERRE - (k * x[0] / m)
+    return [v, a]
+
+def step(dt):
+    k, m, t, y = _state['k'], _state['m'], _state['t'], _state['y']
+    sol = solve_ivp(deriv, [t, t + dt], y, args=(k, m), t_eval=[t + dt], rtol=1e-9)
+    _state['t'] = t + dt
+    _state['y'] = [sol.y[0][0], sol.y[1][0]]
+    return [_state['t'], _state['y'][0], _state['y'][1]]
+
+def equilibrium(k, m):
+    return -m * G_TERRE / k
+`;
+
+/* ============================================================================
+   PARTIE JAVASCRIPT — équivalent de setup_ui / create_widgets / setup_connections
+   et du rendu Matplotlib (sc_1, sc_2), remplacé ici par du dessin canvas.
+   ============================================================================ */
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const M = 1.0;          // masse, fixe (comme dans le script d'origine)
+const N_MAX = 300;       // fenêtre glissante du graphe d'énergie
+const DT = 0.02;         // pas temporel par frame d'animation
+const FRAME_MS = 30;     // intervalle d'animation (~33 fps)
+
+let running = false;
+let timerId = null;
+
+let history = { t: [], Ec: [], Epg: [], Epe: [], Em: [] };
+let current = { t: 0, z: 0, v: 0 };
+
+const kSlider = document.getElementById('k');
+const z0Slider = document.getElementById('z0');
+const kVal = document.getElementById('kVal');
+const z0Val = document.getElementById('z0Val');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const btnInit = document.getElementById('btnInit');
+
+const cvSchema = document.getElementById('canvasSchema');
+const ctxSchema = cvSchema.getContext('2d');
+const cvEnergie = document.getElementById('canvasEnergie');
+const ctxEnergie = cvEnergie.getContext('2d');
+
+/* --- reprise de la fonction spring() de votre script, en JS --- */
+function springPath(start, end, nodes, width) {
+  nodes = Math.max(nodes, 1);
+  const [x1, y1] = start, [x2, y2] = end;
+  if (x1 === x2 && y1 === y2) return [[x1], [y1]];
+  const dx = x2 - x1, dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
+  const ux = dx / length, uy = dy / length;
+  const nx = -uy, ny = ux;
+  const normalDist = Math.sqrt(Math.max(0, width * width - (length * length) / (nodes * nodes))) / 2;
+  const xs = [x1], ys = [y1];
+  for (let i = 1; i <= nodes; i++) {
+    const frac = (length * (2 * i - 1)) / (2 * nodes);
+    const sign = (i % 2 === 0) ? 1 : -1;
+    xs.push(x1 + frac * ux + sign * normalDist * nx);
+    ys.push(y1 + frac * uy + sign * normalDist * ny);
+  }
+  xs.push(x2); ys.push(y2);
+  return [xs, ys];
+}
+
+/* --- repère physique -> pixels, équivalent de set_xlim/set_ylim/aspect('equal') --- */
+function toPixelSchema(x, y) {
+  const W = cvSchema.width, H = cvSchema.height;
+  const ymin = -10, ymax = 10;
+  const scale = H / (ymax - ymin);
+  return [W / 2 + x * scale, H - (y - ymin) * scale];
+}
+
+function drawSchema(k, z) {
+  const W = cvSchema.width, H = cvSchema.height;
+  ctxSchema.clearRect(0, 0, W, H);
+
+  // ligne d'équilibre théorique (pointillé bleu)
+  const posEquil = -M * 9.81 / k;
+  ctxSchema.setLineDash([4, 4]);
+  ctxSchema.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--bleu');
+  ctxSchema.beginPath();
+  let [ex1, ey1] = toPixelSchema(-1, posEquil);
+  let [ex2, ey2] = toPixelSchema(1, posEquil);
+  ctxSchema.moveTo(ex1, ey1); ctxSchema.lineTo(ex2, ey2);
+  ctxSchema.stroke();
+
+  // ligne z = 0 (pointillé blanc discret)
+  ctxSchema.strokeStyle = 'rgba(207,232,221,0.35)';
+  ctxSchema.beginPath();
+  let [zx1, zy1] = toPixelSchema(-1, 0);
+  let [zx2, zy2] = toPixelSchema(1, 0);
+  ctxSchema.moveTo(zx1, zy1); ctxSchema.lineTo(zx2, zy2);
+  ctxSchema.stroke();
+  ctxSchema.setLineDash([]);
+
+  // ressort
+  const [sx, sy] = springPath([0, 5], [0, z], 30, 0.5);
+  ctxSchema.strokeStyle = '#cfe8dd';
+  ctxSchema.lineWidth = 1.3;
+  ctxSchema.beginPath();
+  for (let i = 0; i < sx.length; i++) {
+    const [px, py] = toPixelSchema(sx[i], sy[i]);
+    if (i === 0) ctxSchema.moveTo(px, py); else ctxSchema.lineTo(px, py);
+  }
+  ctxSchema.stroke();
+
+  // masse (cercle)
+  const [cx, cy] = toPixelSchema(0, z);
+  const [rx, ry] = toPixelSchema(1, z); // pour dériver un rayon en pixels cohérent avec l'échelle
+  const radiusPx = Math.abs(rx - cx);
+  ctxSchema.fillStyle = 'rgba(47,95,143,0.55)';
+  ctxSchema.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--bleufonce');
+  ctxSchema.beginPath();
+  ctxSchema.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+  ctxSchema.fill();
+}
+
+function pushHistory(t, z, v, k) {
+  const Ec = 0.5 * M * v * v;
+  const Epg = M * 9.81 * z;
+  const Epe = 0.5 * k * z * z;
+  const Em = Ec + Epg + Epe;
+
+  history.t.push(t);
+  history.Ec.push(Ec);
+  history.Epg.push(Epg);
+  history.Epe.push(Epe);
+  history.Em.push(Em);
+
+  if (history.t.length > N_MAX) {
+    history.t.shift(); history.Ec.shift(); history.Epg.shift(); history.Epe.shift(); history.Em.shift();
+  }
+}
+
+function drawEnergie() {
+  const W = cvEnergie.width, H = cvEnergie.height;
+  ctxEnergie.clearRect(0, 0, W, H);
+
+  const n = history.t.length;
+  if (n < 2) return;
+
+  const allVals = [].concat(history.Ec, history.Epg, history.Epe, history.Em);
+  let ymin = Math.min(...allVals, -10);
+  let ymax = Math.max(...allVals, 10);
+  const pad = (ymax - ymin) * 0.1 || 1;
+  ymin -= pad; ymax += pad;
+
+  const toPx = (i, val) => {
+    const px = (i / (N_MAX - 1)) * W;
+    const py = H - ((val - ymin) / (ymax - ymin)) * H;
+    return [px, py];
+  };
+
+  // ligne zéro
+  ctxEnergie.strokeStyle = 'rgba(207,232,221,0.25)';
+  ctxEnergie.setLineDash([3, 3]);
+  const [zx1, zy1] = toPx(0, 0), [zx2, zy2] = toPx(N_MAX - 1, 0);
+  ctxEnergie.beginPath(); ctxEnergie.moveTo(zx1, zy1); ctxEnergie.lineTo(zx2, zy2); ctxEnergie.stroke();
+  ctxEnergie.setLineDash([]);
+
+  const series = [
+    { data: history.Ec,  color: getComputedStyle(document.documentElement).getPropertyValue('--vert'),   label: 'Cinétique' },
+    { data: history.Epg, color: getComputedStyle(document.documentElement).getPropertyValue('--bleu'),    label: 'Pesanteur' },
+    { data: history.Epe, color: getComputedStyle(document.documentElement).getPropertyValue('--violet'),  label: 'Élastique' },
+    { data: history.Em,  color: getComputedStyle(document.documentElement).getPropertyValue('--rouge'),   label: 'Mécanique' },
+  ];
+
+  series.forEach(s => {
+    ctxEnergie.strokeStyle = s.color;
+    ctxEnergie.lineWidth = 1.5;
+    ctxEnergie.beginPath();
+    for (let i = 0; i < n; i++) {
+      const [px, py] = toPx(i, s.data[i]);
+      if (i === 0) ctxEnergie.moveTo(px, py); else ctxEnergie.lineTo(px, py);
+    }
+    ctxEnergie.stroke();
+  });
+
+  // légende
+  let lx = W - 130, ly = 14;
+  ctxEnergie.font = '11px monospace';
+  series.forEach(s => {
+    ctxEnergie.fillStyle = s.color;
+    ctxEnergie.fillRect(lx, ly - 8, 10, 10);
+    ctxEnergie.fillStyle = '#cfe8dd';
+    ctxEnergie.fillText(s.label, lx + 16, ly + 1);
+    ly += 16;
+  });
+}
+
+/* --- cycle d'animation, équivalent du QTimer + update_plot() --- */
+function tick() {
+  const result = pyodide.runPython(`step(${DT})`).toJs();
+  const [t, z, v] = result;
+  current = { t, z, v };
+  pushHistory(t, z, v, parseFloat(kSlider.value));
+  drawSchema(parseFloat(kSlider.value), z);
+  drawEnergie();
+}
+
+function resetSimulation() {
+  const k = parseFloat(kSlider.value);
+  const z0 = parseFloat(z0Slider.value);
+  pyodide.runPython(`init_state(${k}, ${M}, ${z0})`);
+  history = { t: [], Ec: [], Epg: [], Epe: [], Em: [] };
+  current = { t: 0, z: z0, v: 0 };
+  pushHistory(0, z0, 0, k);
+  drawSchema(k, z0);
+  drawEnergie();
+}
+
+/* --- équivalent setup_connections --- */
+kSlider.addEventListener('input', () => {
+  kVal.textContent = parseFloat(kSlider.value).toFixed(1);
+  if (!pyodide) return;
+  pyodide.runPython(`set_k(${parseFloat(kSlider.value)})`);
+  if (!running) resetSimulation();
+});
+
+z0Slider.addEventListener('input', () => {
+  z0Val.textContent = parseFloat(z0Slider.value).toFixed(1);
+  if (!pyodide) return;
+  resetSimulation();
+});
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true;
+  tick();
+  timerId = setInterval(tick, FRAME_MS);
+});
+
+btnStop.addEventListener('click', () => {
+  running = false;
+  if (timerId) clearInterval(timerId);
+});
+
+btnInit.addEventListener('click', () => {
+  running = false;
+  if (timerId) clearInterval(timerId);
+  resetSimulation();
+});
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+
+  resetSimulation();
+}
+
+setup();
+</script>
+</body>
+</html>

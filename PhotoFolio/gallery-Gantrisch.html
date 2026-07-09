@@ -143,14 +143,22 @@
 
     <section>
       <div class="model-container">
-        <model-viewer id="tone-demo"
-            src="assets/img/Gantrisch.glb"
-            environment-image="assets/img/Puresky_4k.hdr" 
-            camera-controls touch-action="pan-y"
-            max-camera-orbit="auto 90deg auto"
-            max-field-of-view='20deg'
-            min-field-of-view="0deg">
-        </model-viewer>
+<model-viewer src="assets/img/Gantrisch.glb" ar ar-modes="webxr scene-viewer quick-look" camera-controls tone-mapping="neutral" poster="poster.webp" shadow-intensity="1">
+    <button class="Hotspot" slot="hotspot-2" data-position="-2228.914466194875m 1480.5918639596766m 321.5316772801699m" data-normal="-0.04570035680190603m 0.967117385423007m 0.2501908075864208m" data-visibility-attribute="visible">
+        <div class="HotspotAnnotation">Gantrisch</div>
+    </button><button class="Hotspot" slot="hotspot-4" data-position="4381.244396430676m 1508.1868823484547m 1507.2395380384135m" data-normal="-0.21881451485269682m 0.5785935798488694m -0.7857160285035868m" data-visibility-attribute="visible">
+        <div class="HotspotAnnotation">Stockhorn</div>
+    </button>
+    <div class="progress-bar hide" slot="progress-bar">
+        <div class="update-bar"></div>
+    </div>
+    <button slot="ar-button" id="ar-button">
+        View in your space
+    </button>
+    <div id="ar-prompt">
+        <img src="https://modelviewer.dev/shared-assets/icons/hand.png">
+    </div>
+</model-viewer>
       </div>
     </section>
  
