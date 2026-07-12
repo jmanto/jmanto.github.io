@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Oscillateurs couplés — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Chaîne de trois oscillateurs couplés</h1>
+    <div class="sub">Trois masses reliées par quatre ressorts (extrémités fixes) — intégration numérique et analyse fréquentielle.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Masse 1 (kg) <span class="val" id="m1Val">1.00</span></label>
+        <input type="range" id="m1" min="0.1" max="2.1" step="0.1" value="1.0">
+      </div>
+      <div class="ctrl">
+        <label>Masse 2 (kg) <span class="val" id="m2Val">1.00</span></label>
+        <input type="range" id="m2" min="0.1" max="2.1" step="0.1" value="1.0">
+      </div>
+      <div class="ctrl">
+        <label>Masse 3 (kg) <span class="val" id="m3Val">1.00</span></label>
+        <input type="range" id="m3" min="0.1" max="2.1" step="0.1" value="1.0">
+      </div>
+      <div class="ctrl">
+        <label>Condition initiale</label>
+        <select id="mode">
+          <option value="1">Mode propre 1</option>
+          <option value="2">Mode propre 2</option>
+          <option value="3">Mode propre 3</option>
+          <option value="4" selected>Combinaison</option>
+        </select>
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results-top">
+      <div>
+        <canvas id="canvasChaine" width="500" height="220"></canvas>
+        <div class="canvas-label">chaîne masse-ressort</div>
+      </div>
+      <div>
+        <canvas id="canvasFourier" width="440" height="220"></canvas>
+        <div class="canvas-label">spectre de fréquence (m1 bleu, m2 vert +0.2, m3 rouge +0.4)</div>
+      </div>
+    </div>
+    <div class="results-bottom">
+      <div>
+        <canvas id="canvasPositions" width="960" height="240"></canvas>
+        <div class="canvas-label">positions en fonction du temps</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Intégration de l'équation du mouvement (<code>scipy.integrate.solve_ivp</code>) et FFT (<code>numpy.fft</code>) en Python via Pyodide ; rendu sur &lt;canvas&gt;. Le spectre utilise une FFT d'amplitude standard — à ajuster si votre fonction <code>analyse_frequence</code> d'origine diffère.
+  </footer>
+</div>
+
+<script src="assets/constants.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise de fun() et de l'analyse fréquentielle.
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state(m1, m2, m3, x1, x2, x3):
+    _state['m1'], _state['m2'], _state['m3'] = m1, m2, m3
+    _state['k1'] = _state['k12'] = _state['k23'] = _state['k3'] = 1.0
+    _state['t'] = 0.0
+    _state['y'] = [x1, x2, x3, 0.0, 0.0, 0.0]
+    return x1, x2, x3
+
+def set_masses(m1, m2, m3):
+    _state['m1'], _state['m2'], _state['m3'] = m1, m2, m3
+
+def deriv(t, y, m1, m2, m3, k1, k12, k23, k3):
+    a1 = (-k1 * y[0] - k12 * (y[0] - y[1])) / m1
+    a2 = (+k12 * (y[0] - y[1]) - k23 * (y[1] - y[2])) / m2
+    a3 = (+k23 * (y[1] - y[2]) - k3 * y[2]) / m3
+    return [y[3], y[4], y[5], a1, a2, a3]
+
+def step(dt):
+    s = _state
+    args = (s['m1'], s['m2'], s['m3'], s['k1'], s['k12'], s['k23'], s['k3'])
+    sol = solve_ivp(deriv, [s['t'], s['t'] + dt], s['y'], args=args, t_eval=[s['t'] + dt], rtol=1e-9)
+    s['t'] = s['t'] + dt
+    s['y'] = [sol.y[i][0] for i in range(6)]
+    return [s['t'], s['y'][0], s['y'][1], s['y'][2]]
+
+def analyse_frequence(t_list, x_list):
+    # Spectre d'amplitude standard par FFT — approximation de phys_math_tools.analyse_frequence
+    t = np.asarray(t_list); x = np.asarray(x_list)
+    n = len(x)
+    if n < 8:
+        return [], []
+    dt = (t[-1] - t[0]) / (n - 1) if n > 1 else 0.02
+    freqs = np.fft.rfftfreq(n, d=dt)
+    spectrum = np.abs(np.fft.rfft(x - np.mean(x))) / n * 2
+    return freqs.tolist(), spectrum.tolist()
+`;
+
+/* ============================================================================
+   PARTIE JAVASCRIPT — sliders, animation, dessin canvas.
+   ============================================================================ */
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const L0 = 1.0;
+const N_MAX = 300;
+const DT = 0.05;          // identique au pas temporel d'origine (self.dT = 0.05)
+const FRAME_MS = 40;
+
+let running = false;
+let timerId = null;
+let stepCount = 0;
+let history = { t: [], x1: [], x2: [], x3: [] };
+let fourier = { f1: [[], []], f2: [[], []], f3: [[], []] };
+
+const m1s = document.getElementById('m1'), m2s = document.getElementById('m2'), m3s = document.getElementById('m3');
+const m1Val = document.getElementById('m1Val'), m2Val = document.getElementById('m2Val'), m3Val = document.getElementById('m3Val');
+const modeSelect = document.getElementById('mode');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+
+const cvChaine = document.getElementById('canvasChaine'), ctxChaine = cvChaine.getContext('2d');
+const cvFourier = document.getElementById('canvasFourier'), ctxFourier = cvFourier.getContext('2d');
+const cvPositions = document.getElementById('canvasPositions'), ctxPositions = cvPositions.getContext('2d');
+
+const color = name => getComputedStyle(document.documentElement).getPropertyValue(name);
+
+function makeMapper(xmin, xmax, ymin, ymax, W, H, equalAspect = false) {
+  const scaleX = W / (xmax - xmin), scaleY = H / (ymax - ymin);
+  const sx = equalAspect ? Math.min(scaleX, scaleY) : scaleX;
+  const sy = equalAspect ? Math.min(scaleX, scaleY) : scaleY;
+  const marginX = (W - (xmax - xmin) * sx) / 2;
+  const marginY = (H - (ymax - ymin) * sy) / 2;
+  return (x, y) => [ (x - xmin) * sx + marginX, H - ((y - ymin) * sy + marginY) ];
+}
+
+/* reprise de la fonction spring() des scripts précédents, pour visualiser les ressorts */
+function springPath(start, end, nodes, width) {
+  nodes = Math.max(nodes, 1);
+  const [x1, y1] = start, [x2, y2] = end;
+  const dx = x2 - x1, dy = y2 - y1;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return [[x1], [y1]];
+  const ux = dx / length, uy = dy / length;
+  const nx = -uy, ny = ux;
+  const normalDist = Math.sqrt(Math.max(0, width * width - (length * length) / (nodes * nodes))) / 2;
+  const xs = [x1], ys = [y1];
+  for (let i = 1; i <= nodes; i++) {
+    const frac = (length * (2 * i - 1)) / (2 * nodes);
+    const sign = (i % 2 === 0) ? 1 : -1;
+    xs.push(x1 + frac * ux + sign * normalDist * nx);
+    ys.push(y1 + frac * uy + sign * normalDist * ny);
+  }
+  xs.push(x2); ys.push(y2);
+  return [xs, ys];
+}
+
+function drawChaine(pos1, pos2, pos3) {
+  const W = cvChaine.width, H = cvChaine.height;
+  ctxChaine.clearRect(0, 0, W, H);
+  const map = makeMapper(0, 4 * L0, -1, 1, W, H, false);
+
+  // murs
+  ctxChaine.strokeStyle = 'rgba(207,232,221,0.5)'; ctxChaine.lineWidth = 3;
+  let [wx0] = map(0, 0), [wx4] = map(4 * L0, 0);
+  const [, wyTop] = map(0, 0.6), [, wyBot] = map(0, -0.6);
+  ctxChaine.beginPath(); ctxChaine.moveTo(wx0, wyTop); ctxChaine.lineTo(wx0, wyBot); ctxChaine.stroke();
+  ctxChaine.beginPath(); ctxChaine.moveTo(wx4, wyTop); ctxChaine.lineTo(wx4, wyBot); ctxChaine.stroke();
+
+  // ressorts (mur-m1, m1-m2, m2-m3, m3-mur)
+  const anchors = [0, pos1, pos2, pos3, 4 * L0];
+  ctxChaine.strokeStyle = '#cfe8dd'; ctxChaine.lineWidth = 1.1;
+  for (let i = 0; i < 4; i++) {
+    const [sx, sy] = springPath([anchors[i], 0], [anchors[i + 1], 0], 20, 0.15);
+    ctxChaine.beginPath();
+    for (let j = 0; j < sx.length; j++) {
+      const [px, py] = map(sx[j], sy[j]);
+      if (j === 0) ctxChaine.moveTo(px, py); else ctxChaine.lineTo(px, py);
+    }
+    ctxChaine.stroke();
+  }
+
+  // équilibres ("+")
+  ctxChaine.strokeStyle = 'rgba(255,255,255,0.6)'; ctxChaine.lineWidth = 1;
+  [L0, 2 * L0, 3 * L0].forEach(xe => {
+    const [px, py] = map(xe, 0);
+    ctxChaine.beginPath(); ctxChaine.moveTo(px - 5, py); ctxChaine.lineTo(px + 5, py);
+    ctxChaine.moveTo(px, py - 5); ctxChaine.lineTo(px, py + 5); ctxChaine.stroke();
+  });
+
+  // masses
+  const masses = [[pos1, color('--bleu')], [pos2, color('--vert')], [pos3, color('--rouge')]];
+  masses.forEach(([xpos, c]) => {
+    const [px, py] = map(xpos, 0);
+    const [rpx] = map(0.1, 0);
+    const radius = Math.abs(rpx - map(0, 0)[0]);
+    ctxChaine.fillStyle = c; ctxChaine.globalAlpha = 0.75;
+    ctxChaine.beginPath(); ctxChaine.arc(px, py, radius, 0, 2 * Math.PI); ctxChaine.fill();
+    ctxChaine.globalAlpha = 1;
+  });
+}
+
+function drawPositions() {
+  const W = cvPositions.width, H = cvPositions.height;
+  ctxPositions.clearRect(0, 0, W, H);
+  const n = history.t.length;
+  if (n < 2) return;
+  const map = makeMapper(0, N_MAX, 0, 4 * L0, W, H, false);
+
+  const series = [
+    { data: history.x1, c: color('--bleu') },
+    { data: history.x2, c: color('--vert') },
+    { data: history.x3, c: color('--rouge') },
+  ];
+  series.forEach(s => {
+    ctxPositions.strokeStyle = s.c; ctxPositions.lineWidth = 1.4;
+    ctxPositions.beginPath();
+    for (let i = 0; i < n; i++) {
+      const [px, py] = map(i, s.data[i]);
+      if (i === 0) ctxPositions.moveTo(px, py); else ctxPositions.lineTo(px, py);
+    }
+    ctxPositions.stroke();
+  });
+}
+
+function drawFourier() {
+  const W = cvFourier.width, H = cvFourier.height;
+  ctxFourier.clearRect(0, 0, W, H);
+  const map = makeMapper(0, 1, 0, 0.6, W, H, false);
+
+  const series = [
+    { d: fourier.f1, c: color('--bleu') },
+    { d: fourier.f2, c: color('--vert') },
+    { d: fourier.f3, c: color('--rouge') },
+  ];
+  series.forEach(s => {
+    const [freqs, amps] = s.d;
+    if (freqs.length < 2) return;
+    ctxFourier.strokeStyle = s.c; ctxFourier.lineWidth = 1.3;
+    ctxFourier.beginPath();
+    for (let i = 0; i < freqs.length; i++) {
+      if (freqs[i] > 1) break;
+      const [px, py] = map(freqs[i], amps[i]);
+      if (i === 0) ctxFourier.moveTo(px, py); else ctxFourier.lineTo(px, py);
+    }
+    ctxFourier.stroke();
+  });
+
+  ctxFourier.fillStyle = '#6f8f8a'; ctxFourier.font = '10px monospace';
+  ctxFourier.fillText('Fréquence (Hz) →', W - 110, H - 6);
+}
+
+function pushHistory(t, x1, x2, x3) {
+  history.t.push(t); history.x1.push(x1); history.x2.push(x2); history.x3.push(x3);
+  if (history.t.length > N_MAX) { history.t.shift(); history.x1.shift(); history.x2.shift(); history.x3.shift(); }
+}
+
+function updateFourierIfDue() {
+  stepCount++;
+  if (stepCount % 64 !== 0) return;
+  const t = JSON.stringify(history.t);
+  const x1 = JSON.stringify(history.x1.map(v => v - L0));
+  const x2 = JSON.stringify(history.x2.map(v => v - 2 * L0));
+  const x3 = JSON.stringify(history.x3.map(v => v - 3 * L0));
+
+  const [f1, a1] = pyodide.runPython(`analyse_frequence(${t}, ${x1})`).toJs();
+  const [f2, a2] = pyodide.runPython(`analyse_frequence(${t}, ${x2})`).toJs();
+  const [f3, a3] = pyodide.runPython(`analyse_frequence(${t}, ${x3})`).toJs();
+  fourier.f1 = [f1, a1];
+  fourier.f2 = [f2, a2.map(v => v + 0.2)];
+  fourier.f3 = [f3, a3.map(v => v + 0.4)];
+}
+
+function tick() {
+  const [t, x1, x2, x3] = pyodide.runPython(`step(${DT})`).toJs();
+  pushHistory(t, x1 + L0, x2 + 2 * L0, x3 + 3 * L0);
+  updateFourierIfDue();
+  drawChaine(x1 + L0, x2 + 2 * L0, x3 + 3 * L0);
+  drawPositions();
+  drawFourier();
+}
+
+function initialDisplacements(mode) {
+  const l0 = L0;
+  if (mode === '1')      return [ 0.4 * l0,  0.4 * Math.SQRT2 * l0,  0.4 * l0 ];
+  else if (mode === '2') return [ 0.4 * l0,  0,                     -0.4 * l0 ];
+  else if (mode === '3') return [ 0.4 * l0, -0.4 * Math.SQRT2 * l0,  0.4 * l0 ];
+  else                   return [ 0.2 * l0,  0.5 * l0,               -0.3 * l0 ];
+}
+
+function resetSimulation() {
+  const m1 = parseFloat(m1s.value), m2 = parseFloat(m2s.value), m3 = parseFloat(m3s.value);
+  const [x1, x2, x3] = initialDisplacements(modeSelect.value);
+  pyodide.runPython(`init_state(${m1}, ${m2}, ${m3}, ${x1}, ${x2}, ${x3})`);
+  history = { t: [], x1: [], x2: [], x3: [] };
+  fourier = { f1: [[], []], f2: [[], []], f3: [[], []] };
+  stepCount = 0;
+  pushHistory(0, x1 + L0, x2 + 2 * L0, x3 + 3 * L0);
+  drawChaine(x1 + L0, x2 + 2 * L0, x3 + 3 * L0);
+  drawPositions();
+  drawFourier();
+}
+
+function onMassChange(slider, label) {
+  label.textContent = parseFloat(slider.value).toFixed(2);
+  if (!pyodide) return;
+  pyodide.runPython(`set_masses(${parseFloat(m1s.value)}, ${parseFloat(m2s.value)}, ${parseFloat(m3s.value)})`);
+  if (!running) resetSimulation();
+}
+m1s.addEventListener('input', () => onMassChange(m1s, m1Val));
+m2s.addEventListener('input', () => onMassChange(m2s, m2Val));
+m3s.addEventListener('input', () => onMassChange(m3s, m3Val));
+
+// changer de mode réinitialise toujours, même en cours d'animation (comme self.update() dans le script d'origine)
+modeSelect.addEventListener('change', () => { if (pyodide) resetSimulation(); });
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

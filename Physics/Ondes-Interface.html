@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Interface entre deux cordes — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018; --panel: #0d1a26; --trace: #5ee6b5; --trace-dim: #2b6e57;
+    --grid: #12293a; --text: #cfe8dd; --text-dim: #6f8f8a; --accent: #ff8c5a;
+    --bleu: #5aa9e6; --bleufonce: #2f5f8f; --vert: #5ee6b5; --rouge: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; color: var(--text); font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh; padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px 24px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  .checkbox-ctrl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+  .checkbox-ctrl input { accent-color: var(--trace); width: 16px; height: 16px; }
+  .buttons { display: flex; gap: 10px; }
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--trace-dim);
+    padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.03em;
+    cursor: pointer; border-radius: 2px;
+  }
+  button:hover { border-color: var(--trace); color: var(--trace); }
+  canvas { background: #0d1a26; border-radius: 2px; width: 100%; display: block; }
+  .canvas-label { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.05em; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Réflexion et transmission à une interface</h1>
+    <div class="sub">Onde incidente sur la jonction entre deux cordes de vitesses de propagation différentes.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Vitesse de propagation 1 <span class="val" id="c1Val">1.0</span></label>
+        <input type="range" id="c1" min="1" max="10" step="0.5" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Vitesse de propagation 2 <span class="val" id="c2Val">1.0</span></label>
+        <input type="range" id="c2" min="1" max="10" step="0.5" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Pulsation <span class="val" id="wVal">1.00</span></label>
+        <input type="range" id="w" min="1" max="10" step="0.5" value="1">
+      </div>
+      <div class="ctrl checkbox-ctrl">
+        <input type="checkbox" id="fixe">
+        <label for="fixe" style="margin:0;">Extrémité fixe</label>
+      </div>
+      <div class="ctrl checkbox-ctrl">
+        <input type="checkbox" id="harmo" checked>
+        <label for="harmo" style="margin:0;">Onde harmonique pure</label>
+      </div>
+      <div class="ctrl checkbox-ctrl">
+        <input type="checkbox" id="ir">
+        <label for="ir" style="margin:0;">Afficher incidente/réfléchie séparément</label>
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvInterface" width="820" height="320"></canvas>
+    <div class="canvas-label">incidente (bleu foncé) — réfléchie (vert) — somme (bleu) — transmise (rouge)</div>
+  </div>
+
+  <footer>
+    Coefficients de Fourier de l'onde carrée (<code>scipy.integrate.quad</code>) et propagation calculés en Python via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise de fourier_coefficients() / k() / RT() / wave_superpose().
+
+   Simplification assumée par rapport au script d'origine : la pulsation est
+   toujours pilotée par le slider (w = w_slider * k_base), y compris à
+   l'initialisation — dans le script PyQt6, self.get_w() n'était appelée que
+   lorsque l'utilisateur déplaçait le slider (ligne commentée dans init()).
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import quad
+
+_state = {}
+
+def _square_wave(x):
+    return np.sign(np.sin(x - np.pi / 2) - 0.95)
+
+def init_state():
+    n = 2
+    L = n * 2 * np.pi
+    x1 = np.linspace(-L, 0, n * 100)
+    x2 = np.linspace(0, L, n * 100)
+
+    N = 30
+    an = np.zeros(N)
+    for k in range(1, N + 1):
+        an[k - 1] = (2 / L) * quad(lambda x: _square_wave(x) * np.cos(2 * np.pi * k * x / L), -L, 0)[0]
+
+    _state.update(x1=x1, x2=x2, an=an, t=0.0, L=L)
+    return x1.tolist(), x2.tolist(), L
+
+def _RT(k1, k2, fixe):
+    if fixe:
+        return -np.ones_like(k1), np.zeros_like(k1)
+    return (k1 - k2) / (k1 + k2), 2 * k1 / (k1 + k2)
+
+def set_params(c1, c2, w_slider, harmo, fixe):
+    an = _state['an']
+    if harmo:
+        k_base = np.array([1.0])
+        A = np.array([1.0])
+    else:
+        n = np.arange(1, 10)
+        k_base = n.astype(float)
+        A = 0.5 * an[:9]
+
+    w = w_slider * k_base
+    k1 = w / c1
+    k2 = w / c2
+    R, T = _RT(k1, k2, fixe)
+
+    _state.update(A=A, w=w, k1=k1, k2=k2, R=R, T=T)
+
+def step(dt):
+    _state['t'] = _state['t'] + dt
+    return _wave_superpose()
+
+def _wave_superpose():
+    x1, x2 = _state['x1'], _state['x2']
+    A, w, k1, k2, R, T, t = _state['A'], _state['w'], _state['k1'], _state['k2'], _state['R'], _state['T'], _state['t']
+    yi = np.zeros_like(x1); yr = np.zeros_like(x1); yt = np.zeros_like(x2)
+    for Ai, wi, k1i, k2i, Ri, Ti in zip(A, w, k1, k2, R, T):
+        yi = yi + Ai * np.cos(k1i * x1 - wi * t)
+        yr = yr + Ai * Ri * np.cos(k1i * x1 + wi * t)
+        yt = yt + Ai * Ti * np.cos(k2i * x2 - wi * t)
+    return [yi.tolist(), yr.tolist(), yt.tolist()]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.02, FRAME_MS = 30;
+let running = false, timerId = null;
+let x1Data = [], x2Data = [], Lval = 0;
+
+const c1s = document.getElementById('c1'), c2s = document.getElementById('c2'), ws = document.getElementById('w');
+const c1Val = document.getElementById('c1Val'), c2Val = document.getElementById('c2Val'), wVal = document.getElementById('wVal');
+const fixeBox = document.getElementById('fixe'), harmoBox = document.getElementById('harmo'), irBox = document.getElementById('ir');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvInterface = document.getElementById('cvInterface');
+
+function applyParams() {
+  const c1 = parseFloat(c1s.value), c2 = parseFloat(c2s.value), w = parseFloat(ws.value);
+  const harmo = harmoBox.checked ? 1 : 0, fixe = fixeBox.checked ? 1 : 0;
+  pyodide.runPython(`set_params(${c1}, ${c2}, ${w}, ${harmo}, ${fixe})`);
+}
+
+function draw(yi, yr, yt) {
+  const ctx = clearCanvas(cvInterface);
+  const map = makeMapper(-Lval, Lval, -2, 2, cvInterface.width, cvInterface.height);
+  drawVLine(ctx, map, -2, 2, 0, 'rgba(207,232,221,0.4)', [4, 3]);
+
+  if (irBox.checked) {
+    drawSeries(ctx, map, x1Data, yi, { color: waveColor('--bleufonce'), width: 1 });
+    drawSeries(ctx, map, x1Data, yr, { color: waveColor('--vert'), width: 1 });
+  }
+  const yir = yi.map((v, i) => v + yr[i]);
+  drawSeries(ctx, map, x1Data, yir, { color: waveColor('--bleu'), width: 2 });
+  drawSeries(ctx, map, x2Data, yt, { color: waveColor('--rouge'), width: 2 });
+
+  // point à l'interface
+  const [px, py] = map(0, yt[0]);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(px, py, 4, 0, 2 * Math.PI); ctx.fill();
+}
+
+function tick() {
+  const [yi, yr, yt] = pyodide.runPython(`step(${DT})`).toJs();
+  draw(yi, yr, yt);
+}
+
+function resetSimulation() {
+  pyodide.runPython(`_state['t'] = 0.0`);
+  applyParams();
+  tick();
+}
+
+[c1s, c2s, ws].forEach(sl => sl.addEventListener('input', () => {
+  c1Val.textContent = parseFloat(c1s.value).toFixed(1);
+  c2Val.textContent = parseFloat(c2s.value).toFixed(1);
+  wVal.textContent = parseFloat(ws.value).toFixed(2);
+  if (!pyodide) return;
+  applyParams();
+  tick();
+}));
+[fixeBox, harmoBox, irBox].forEach(cb => cb.addEventListener('change', () => {
+  if (!pyodide) return;
+  applyParams();
+  tick();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+
+  const [x1, x2, L] = pyodide.runPython('init_state()').toJs();
+  x1Data = x1; x2Data = x2; Lval = L;
+
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Superposition de deux pulses — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018; --panel: #0d1a26; --trace: #5ee6b5; --trace-dim: #2b6e57;
+    --grid: #12293a; --text: #cfe8dd; --text-dim: #6f8f8a; --accent: #ff8c5a;
+    --bleufonce: #2f5f8f; --vert: #5ee6b5; --rouge: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; color: var(--text); font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh; padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px 24px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  .buttons { display: flex; gap: 10px; }
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--trace-dim);
+    padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.03em;
+    cursor: pointer; border-radius: 2px;
+  }
+  button:hover { border-color: var(--trace); color: var(--trace); }
+  canvas { background: #0d1a26; border-radius: 2px; width: 100%; display: block; }
+  .canvas-label { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.05em; }
+  .canvas-wrap { margin-bottom: 10px; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Superposition de deux pulses</h1>
+    <div class="sub">Deux impulsions gaussiennes se propageant en sens opposés et leur interférence lors du croisement.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Amplitude 1 <span class="val" id="A1Val">1.0</span></label>
+        <input type="range" id="A1" min="0" max="10" step="1" value="10">
+      </div>
+      <div class="ctrl">
+        <label>Amplitude 2 <span class="val" id="A2Val">1.0</span></label>
+        <input type="range" id="A2" min="0" max="10" step="1" value="10">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="canvas-wrap">
+      <canvas id="cvPulses" width="820" height="160"></canvas>
+      <div class="canvas-label">pulse 1 (bleu, → ) — pulse 2 (vert, ←)</div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cvSomme" width="820" height="160"></canvas>
+      <div class="canvas-label">superposition</div>
+    </div>
+  </div>
+
+  <footer>
+    Calcul effectué en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;.
+    Le bouton « Enregistrer » du script d'origine (export d'une séquence d'images PNG sur disque) n'a pas d'équivalent direct dans un navigateur et a été omis.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de init_plot()/update_plot().
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+
+_x = np.linspace(0, 10, 100)
+_c = 1.0
+_sigma = 0.5
+_w = 1.0
+_state = {'t': 0.0, 'A1': 1.0, 'A2': 1.0}
+
+def set_params(A1, A2):
+    _state.update(A1=A1, A2=A2)
+
+def step(dt):
+    _state['t'] = _state['t'] + dt
+    A1, A2, t = _state['A1'], _state['A2'], _state['t']
+    y1 = A1 * np.exp(-(_w / _c * _x - _w * t) ** 2 / (2 * _sigma ** 2))
+    y2 = A2 * np.exp(-(_w / _c * (_x - 10) + _w * t) ** 2 / (2 * _sigma ** 2))
+    return [_x.tolist(), y1.tolist(), y2.tolist(), (y1 + y2).tolist()]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.02, FRAME_MS = 30;
+let running = false, timerId = null;
+
+const A1s = document.getElementById('A1'), A2s = document.getElementById('A2');
+const A1Val = document.getElementById('A1Val'), A2Val = document.getElementById('A2Val');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvPulses = document.getElementById('cvPulses'), cvSomme = document.getElementById('cvSomme');
+
+const mapA1 = v => v / 10;                 // sld 0..10 -> 0..1
+const mapA2 = v => -1 + v / 10 * 2;         // sld 0..10 -> -1..1 (amplitude 2 peut être inversée)
+
+function applyParams() {
+  pyodide.runPython(`set_params(${mapA1(parseFloat(A1s.value))}, ${mapA2(parseFloat(A2s.value))})`);
+}
+
+function draw(x, y1, y2, ysum) {
+  const xmin = x[0], xmax = x[x.length - 1];
+
+  let ctx = clearCanvas(cvPulses);
+  let map = makeMapper(xmin, xmax, -2.1, 2.1, cvPulses.width, cvPulses.height);
+  drawSeries(ctx, map, x, y1, { color: waveColor('--bleufonce'), width: 2 });
+  drawSeries(ctx, map, x, y2, { color: waveColor('--vert'), width: 2 });
+
+  ctx = clearCanvas(cvSomme);
+  map = makeMapper(xmin, xmax, -2.1, 2.1, cvSomme.width, cvSomme.height);
+  drawHLine(ctx, map, xmin, xmax, 0, 'rgba(207,232,221,0.3)', [4, 3]);
+  drawSeries(ctx, map, x, ysum, { color: waveColor('--rouge'), width: 2 });
+  drawAxisLabels(ctx, cvSomme.width, cvSomme.height, 'Position / m', '');
+}
+
+function tick() {
+  const [x, y1, y2, ysum] = pyodide.runPython(`step(${DT})`).toJs();
+  draw(x, y1, y2, ysum);
+}
+
+function resetSimulation() {
+  pyodide.runPython(`_state['t'] = 0.0`);
+  applyParams();
+  tick();
+}
+
+[A1s, A2s].forEach(sl => sl.addEventListener('input', () => {
+  A1Val.textContent = mapA1(parseFloat(A1s.value)).toFixed(1);
+  A2Val.textContent = mapA2(parseFloat(A2s.value)).toFixed(1);
+  if (!pyodide) return;
+  applyParams();
+  tick();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

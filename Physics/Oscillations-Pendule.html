@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Pendule mathématique — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018; --panel: #0d1a26; --trace: #5ee6b5; --trace-dim: #2b6e57;
+    --grid: #12293a; --text: #cfe8dd; --text-dim: #6f8f8a; --accent: #ff8c5a;
+    --bleu: #5aa9e6; --bleufonce: #2f5f8f; --vert: #5ee6b5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; color: var(--text); font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh; padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px 24px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  .checkbox-ctrl { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-dim); }
+  .checkbox-ctrl input { accent-color: var(--trace); width: 16px; height: 16px; }
+  .buttons { display: flex; gap: 10px; }
+  button {
+    background: var(--bg); color: var(--text); border: 1px solid var(--trace-dim);
+    padding: 9px 14px; font-family: inherit; font-size: 12px; letter-spacing: 0.03em;
+    cursor: pointer; border-radius: 2px;
+  }
+  button:hover { border-color: var(--trace); color: var(--trace); }
+  .results-top { display: flex; justify-content: center; margin-bottom: 16px; }
+  .results-bottom { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+  canvas { background: #0d1a26; border-radius: 2px; }
+  .canvas-label { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 6px; letter-spacing: 0.05em; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Pendule mathématique</h1>
+    <div class="sub">Comparaison d'un pendule réglable et d'un pendule de référence (longueur 1 m) — équation exacte ou linéarisée.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Longueur L (m) <span class="val" id="LVal">1.00</span></label>
+        <input type="range" id="L" min="0.5" max="2" step="0.05" value="1.0">
+      </div>
+      <div class="ctrl">
+        <label>Angle initial θ₀ (°) <span class="val" id="theta0Val">20</span></label>
+        <input type="range" id="theta0" min="0" max="120" step="1" value="20">
+      </div>
+      <div class="ctrl checkbox-ctrl">
+        <input type="checkbox" id="approx">
+        <label for="approx" style="margin:0;">Approximation linéaire (sin θ ≈ θ)</label>
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results-top">
+      <div>
+        <canvas id="canvasPendule" width="420" height="320"></canvas>
+        <div class="canvas-label">pendule (bleu) — référence (vert)</div>
+      </div>
+    </div>
+    <div class="results-bottom">
+      <div>
+        <canvas id="canvasAngles" width="440" height="280"></canvas>
+        <div class="canvas-label">angle en fonction du temps</div>
+      </div>
+      <div>
+        <canvas id="canvasPhase" width="280" height="280"></canvas>
+        <div class="canvas-label">angle pendule vs angle référence</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Intégration de l'équation du pendule (<code>scipy.integrate.solve_ivp</code>) en Python via Pyodide ; rendu sur &lt;canvas&gt; pour l'animation. Aucune donnée envoyée à un serveur.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise de fun1 / fun1_lin / fun2 de votre script PyQt6.
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state(L1, L2, theta0):
+    _state['L1'] = L1
+    _state['L2'] = L2
+    _state['t'] = 0.0
+    _state['y1'] = [theta0, 0.0]
+    _state['y2'] = [theta0, 0.0]
+    return _state['y1'][0], _state['y2'][0]
+
+def set_L1(L1):
+    _state['L1'] = L1
+
+def deriv1(t, x, L, linear):
+    v = x[1]
+    if linear:
+        a = -x[0] * g_terre / L
+    else:
+        a = -np.sin(x[0]) * g_terre / L
+    return [v, a]
+
+def deriv2(t, x, L):
+    v = x[1]
+    a = -np.sin(x[0]) * g_terre / L
+    return [v, a]
+
+def step(dt, linear):
+    L1, L2, t = _state['L1'], _state['L2'], _state['t']
+    y1, y2 = _state['y1'], _state['y2']
+    sol1 = solve_ivp(deriv1, [t, t + dt], y1, args=(L1, bool(linear)), t_eval=[t + dt], rtol=1e-9)
+    sol2 = solve_ivp(deriv2, [t, t + dt], y2, args=(L2,), t_eval=[t + dt], rtol=1e-9)
+    _state['t'] = t + dt
+    _state['y1'] = [sol1.y[0][0], sol1.y[1][0]]
+    _state['y2'] = [sol2.y[0][0], sol2.y[1][0]]
+    return [_state['t'], _state['y1'][0], _state['y2'][0]]
+`;
+
+/* ============================================================================
+   PARTIE JAVASCRIPT — sliders, animation, dessin canvas.
+   ============================================================================ */
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const L2 = 1.0;           // longueur du pendule de référence, fixe
+const N_MAX = 300;        // fenêtre glissante des graphes
+const DT = 0.02;
+const FRAME_MS = 30;
+
+let running = false;
+let timerId = null;
+let theta0Rad = 0;        // angle initial courant, utilisé pour fixer les échelles des graphes
+let history = { t: [], thetaP: [], thetaRef: [] };
+
+const Lslider = document.getElementById('L');
+const theta0Slider = document.getElementById('theta0');
+const approxBox = document.getElementById('approx');
+const LVal = document.getElementById('LVal');
+const theta0Val = document.getElementById('theta0Val');
+const btnStart = document.getElementById('btnStart');
+const btnStop = document.getElementById('btnStop');
+const btnInit = document.getElementById('btnInit');
+
+const cvPendule = document.getElementById('canvasPendule');
+const ctxPendule = cvPendule.getContext('2d');
+const cvAngles = document.getElementById('canvasAngles');
+const ctxAngles = cvAngles.getContext('2d');
+const cvPhase = document.getElementById('canvasPhase');
+const ctxPhase = cvPhase.getContext('2d');
+
+const color = name => getComputedStyle(document.documentElement).getPropertyValue(name);
+
+/* mappage repère physique -> pixels, aspect conservé, centré (équivalent set_xlim/set_ylim/aspect('equal')) */
+function makeMapper(xmin, xmax, ymin, ymax, W, H, equalAspect = true) {
+  const scaleX = W / (xmax - xmin), scaleY = H / (ymax - ymin);
+  const scale = equalAspect ? Math.min(scaleX, scaleY) : null;
+  const sx = equalAspect ? scale : scaleX;
+  const sy = equalAspect ? scale : scaleY;
+  const marginX = (W - (xmax - xmin) * sx) / 2;
+  const marginY = (H - (ymax - ymin) * sy) / 2;
+  return (x, y) => [ (x - xmin) * sx + marginX, H - ((y - ymin) * sy + marginY) ];
+}
+
+function drawPendule(L1, theta1, theta2) {
+  const W = cvPendule.width, H = cvPendule.height;
+  ctxPendule.clearRect(0, 0, W, H);
+  const map = makeMapper(-2.1, 2.1, -2.1, 1.1, W, H, true);
+
+  // pendule de référence (vert)
+  const [px0, py0] = map(0, 0);
+  const [rx2, ry2] = map(L2 * Math.sin(theta2), -L2 * Math.cos(theta2));
+  ctxPendule.strokeStyle = color('--vert');
+  ctxPendule.lineWidth = 1.3;
+  ctxPendule.beginPath(); ctxPendule.moveTo(px0, py0); ctxPendule.lineTo(rx2, ry2); ctxPendule.stroke();
+  const [rrx2, rry2] = map(0.05, 0);
+  const radius2 = Math.abs(rrx2 - px0);
+  ctxPendule.fillStyle = 'rgba(94,230,181,0.8)';
+  ctxPendule.beginPath(); ctxPendule.arc(rx2, ry2, radius2, 0, 2 * Math.PI); ctxPendule.fill();
+
+  // pendule réglable (bleu)
+  const [rx1, ry1] = map(L1 * Math.sin(theta1), -L1 * Math.cos(theta1));
+  ctxPendule.strokeStyle = color('--bleufonce');
+  ctxPendule.beginPath(); ctxPendule.moveTo(px0, py0); ctxPendule.lineTo(rx1, ry1); ctxPendule.stroke();
+  const [rrx1] = map(0.1, 0);
+  const radius1 = Math.abs(rrx1 - px0);
+  ctxPendule.fillStyle = 'rgba(47,95,143,0.6)';
+  ctxPendule.beginPath(); ctxPendule.arc(rx1, ry1, radius1, 0, 2 * Math.PI); ctxPendule.fill();
+
+  // légende
+  ctxPendule.font = '11px monospace';
+  ctxPendule.fillStyle = color('--bleu'); ctxPendule.fillRect(W - 110, 12, 10, 10);
+  ctxPendule.fillStyle = '#cfe8dd'; ctxPendule.fillText('Pendule', W - 94, 21);
+  ctxPendule.fillStyle = color('--vert'); ctxPendule.fillRect(W - 110, 30, 10, 10);
+  ctxPendule.fillStyle = '#cfe8dd'; ctxPendule.fillText('Référence', W - 94, 39);
+}
+
+function drawAngles() {
+  const W = cvAngles.width, H = cvAngles.height;
+  ctxAngles.clearRect(0, 0, W, H);
+  const n = history.t.length;
+  if (n < 2) return;
+
+  const lim = 1.1 * theta0Rad || 0.05;
+  const map = makeMapper(0, N_MAX, -lim, lim, W, H, false);
+
+  ctxAngles.strokeStyle = 'rgba(207,232,221,0.25)';
+  ctxAngles.setLineDash([3, 3]);
+  const [zx1, zy1] = map(0, 0), [zx2, zy2] = map(N_MAX, 0);
+  ctxAngles.beginPath(); ctxAngles.moveTo(zx1, zy1); ctxAngles.lineTo(zx2, zy2); ctxAngles.stroke();
+  ctxAngles.setLineDash([]);
+
+  const series = [
+    { data: history.thetaP,   c: color('--bleu') },
+    { data: history.thetaRef, c: color('--vert') },
+  ];
+  series.forEach(s => {
+    ctxAngles.strokeStyle = s.c; ctxAngles.lineWidth = 1.4;
+    ctxAngles.beginPath();
+    for (let i = 0; i < n; i++) {
+      const [px, py] = map(i, s.data[i]);
+      if (i === 0) ctxAngles.moveTo(px, py); else ctxAngles.lineTo(px, py);
+    }
+    ctxAngles.stroke();
+  });
+
+  ctxAngles.fillStyle = '#6f8f8a'; ctxAngles.font = '10px monospace';
+  ctxAngles.fillText('Temps →', W - 55, H - 6);
+  ctxAngles.save(); ctxAngles.translate(10, 14); ctxAngles.fillText('Angle', 0, 0); ctxAngles.restore();
+}
+
+function drawPhase() {
+  const W = cvPhase.width, H = cvPhase.height;
+  ctxPhase.clearRect(0, 0, W, H);
+  const n = history.t.length;
+  if (n < 2) return;
+
+  const lim = 1.1 * theta0Rad || 0.05;
+  const map = makeMapper(-lim, lim, -lim, lim, W, H, true);
+
+  ctxPhase.strokeStyle = color('--bleu'); ctxPhase.lineWidth = 1.4;
+  ctxPhase.beginPath();
+  for (let i = 0; i < n; i++) {
+    const [px, py] = map(history.thetaRef[i], history.thetaP[i]);
+    if (i === 0) ctxPhase.moveTo(px, py); else ctxPhase.lineTo(px, py);
+  }
+  ctxPhase.stroke();
+
+  ctxPhase.fillStyle = '#6f8f8a'; ctxPhase.font = '10px monospace';
+  ctxPhase.fillText('Angle référence →', W - 130, H - 6);
+  ctxPhase.save(); ctxPhase.translate(10, 14); ctxPhase.fillText('Angle pendule', 0, 0); ctxPhase.restore();
+}
+
+function pushHistory(t, thetaP, thetaRef) {
+  history.t.push(t); history.thetaP.push(thetaP); history.thetaRef.push(thetaRef);
+  if (history.t.length > N_MAX) { history.t.shift(); history.thetaP.shift(); history.thetaRef.shift(); }
+}
+
+function tick() {
+  const linear = approxBox.checked ? 1 : 0;
+  const [t, thetaP, thetaRef] = pyodide.runPython(`step(${DT}, ${linear})`).toJs();
+  pushHistory(t, thetaP, thetaRef);
+  drawPendule(parseFloat(Lslider.value), thetaP, thetaRef);
+  drawAngles();
+  drawPhase();
+}
+
+function resetSimulation() {
+  const L1 = parseFloat(Lslider.value);
+  theta0Rad = parseFloat(theta0Slider.value) * Math.PI / 180;
+  pyodide.runPython(`init_state(${L1}, ${L2}, ${theta0Rad})`);
+  history = { t: [], thetaP: [], thetaRef: [] };
+  pushHistory(0, theta0Rad, theta0Rad);
+  drawPendule(L1, theta0Rad, theta0Rad);
+  drawAngles();
+  drawPhase();
+}
+
+Lslider.addEventListener('input', () => {
+  LVal.textContent = parseFloat(Lslider.value).toFixed(2);
+  if (!pyodide) return;
+  pyodide.runPython(`set_L1(${parseFloat(Lslider.value)})`);
+  if (!running) resetSimulation();
+});
+
+theta0Slider.addEventListener('input', () => {
+  theta0Val.textContent = theta0Slider.value;
+  if (!pyodide) return;
+  if (!running) resetSimulation();
+});
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

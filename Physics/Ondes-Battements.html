@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Battements — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018; --panel: #0d1a26; --trace: #5ee6b5; --trace-dim: #2b6e57;
+    --grid: #12293a; --text: #cfe8dd; --text-dim: #6f8f8a; --accent: #ff8c5a;
+    --bleu: #5aa9e6; --bleufonce: #2f5f8f; --vert: #5ee6b5; --vertclair: #a8f0d1; --rouge: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; color: var(--text); font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh; padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 18px 24px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  canvas { background: #0d1a26; border-radius: 2px; width: 100%; display: block; }
+  .canvas-label { text-align: center; font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.05em; }
+  .canvas-wrap { margin-bottom: 10px; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Battements</h1>
+    <div class="sub">Superposition de deux ondes de fréquences voisines — enveloppe lente et onde résultante rapide.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Amplitude <span class="val" id="AVal">1.0</span></label>
+        <input type="range" id="A" min="0" max="10" step="1" value="10">
+      </div>
+      <div class="ctrl">
+        <label>Fréquence 1 (Hz) <span class="val" id="w1Val">2.05</span></label>
+        <input type="range" id="w1" min="1" max="20" step="1" value="5">
+      </div>
+      <div class="ctrl">
+        <label>Fréquence 2 (Hz) <span class="val" id="w2Val">2.05</span></label>
+        <input type="range" id="w2" min="1" max="20" step="1" value="5">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="canvas-wrap">
+      <canvas id="cvOndes" width="820" height="140"></canvas>
+      <div class="canvas-label">onde 1 (bleu, décalée +1) — onde 2 (vert, décalée −1)</div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cvEnveloppe" width="820" height="140"></canvas>
+      <div class="canvas-label">enveloppe (bleu clair, +1) — porteuse rapide (vert clair, −1)</div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cvSomme" width="820" height="140"></canvas>
+      <div class="canvas-label">onde résultante (rouge) et son enveloppe (pointillé blanc)</div>
+    </div>
+  </div>
+
+  <footer>
+    Calcul effectué en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;. Aucune donnée envoyée à un serveur.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de init_plot()/update_plot().
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+
+_t = np.linspace(0, 30, 1000)
+
+def compute(A, w1, w2):
+    y1 = A * np.cos(2 * np.pi * w1 * _t)
+    y2 = A * np.cos(2 * np.pi * w2 * _t)
+    yA = 2 * A * np.cos(2 * np.pi * (w1 - w2) / 2 * _t)
+    yR = np.cos(2 * np.pi * (w1 + w2) / 2 * _t)
+    return [_t.tolist(), y1.tolist(), y2.tolist(), yA.tolist(), yR.tolist(), (y1 + y2).tolist()]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const Aslider = document.getElementById('A'), w1s = document.getElementById('w1'), w2s = document.getElementById('w2');
+const AVal = document.getElementById('AVal'), w1Val = document.getElementById('w1Val'), w2Val = document.getElementById('w2Val');
+
+const cvOndes = document.getElementById('cvOndes');
+const cvEnveloppe = document.getElementById('cvEnveloppe');
+const cvSomme = document.getElementById('cvSomme');
+
+// minmaxRange équivalents (repris tels quels du script PyQt6)
+const mapA  = v => v / 10 * 1;                 // sld 0..10 -> 0..1
+const mapW  = v => 1 + (v - 1) / 19 * 2;        // sld 1..20 -> 1..3 Hz
+
+function render() {
+  const A = mapA(parseFloat(Aslider.value));
+  const w1 = mapW(parseFloat(w1s.value));
+  const w2 = mapW(parseFloat(w2s.value));
+
+  const [t, y1, y2, yA, yR, ySum] = pyodide.runPython(`compute(${A}, ${w1}, ${w2})`).toJs();
+  const tmin = t[0], tmax = t[t.length - 1];
+
+  // panneau 1 : ondes individuelles, décalées
+  let ctx = clearCanvas(cvOndes);
+  let map = makeMapper(tmin, tmax, -2.1, 2.1, cvOndes.width, cvOndes.height);
+  drawSeries(ctx, map, t, y1.map(v => v + 1), { color: waveColor('--bleufonce'), width: 2 });
+  drawSeries(ctx, map, t, y2.map(v => v - 1), { color: waveColor('--vert'), width: 2 });
+
+  // panneau 2 : enveloppe et porteuse
+  ctx = clearCanvas(cvEnveloppe);
+  map = makeMapper(tmin, tmax, -2.1, 2.1, cvEnveloppe.width, cvEnveloppe.height);
+  drawSeries(ctx, map, t, yA.map(v => v + 1), { color: waveColor('--bleu'), width: 2 });
+  drawSeries(ctx, map, t, yR.map(v => v - 1), { color: waveColor('--vertclair'), width: 2 });
+
+  // panneau 3 : onde résultante + enveloppe
+  ctx = clearCanvas(cvSomme);
+  map = makeMapper(tmin, tmax, -2.1, 2.1, cvSomme.width, cvSomme.height);
+  drawHLine(ctx, map, tmin, tmax, 0, 'rgba(207,232,221,0.35)', [6, 3]);
+  drawSeries(ctx, map, t, ySum, { color: waveColor('--rouge'), width: 2 });
+  drawSeries(ctx, map, t, yA, { color: '#ffffff', width: 1, dash: [2, 2] });
+  drawSeries(ctx, map, t, yA.map(v => -v), { color: '#ffffff', width: 1, dash: [2, 2] });
+  drawAxisLabels(ctx, cvSomme.width, cvSomme.height, 'Temps / s', '');
+}
+
+Aslider.addEventListener('input', () => { AVal.textContent = mapA(parseFloat(Aslider.value)).toFixed(1); if (pyodide) render(); });
+w1s.addEventListener('input', () => { w1Val.textContent = mapW(parseFloat(w1s.value)).toFixed(2); if (pyodide) render(); });
+w2s.addEventListener('input', () => { w2Val.textContent = mapW(parseFloat(w2s.value)).toFixed(2); if (pyodide) render(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  AVal.textContent = mapA(parseFloat(Aslider.value)).toFixed(1);
+  w1Val.textContent = mapW(parseFloat(w1s.value)).toFixed(2);
+  w2Val.textContent = mapW(parseFloat(w2s.value)).toFixed(2);
+  render();
+}
+setup();
+</script>
+</body>
+</html>
