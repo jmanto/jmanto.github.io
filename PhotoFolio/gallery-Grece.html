@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>Grèce</title>
+  <meta name="description" content="Portfolio de voyages et de randonnées, Grèce">
+  <meta name="keywords" content="">
+
+  <!-- Favicons -->
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Cardo:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+
+  <!-- Vendor CSS Files -->
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+
+  <!-- Main CSS File -->
+  <link href="assets/css/main.css" rel="stylesheet">
+
+  <!-- Model-Viewer: Import the component -->
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.3.1/model-viewer.min.js"></script>
+
+  <!-- Model-Viewer: Define the style (for size) -->
+  <style>
+    /* 1. Define the size of your parent wrapper */
+    .model-container {
+        width: 100%;       /* Takes full width of the parent layout */
+        height: 800px;     /* Set your desired absolute or relative height here */
+    }
+
+    /* 2. Force the model-viewer to fill 100% of that parent wrapper */
+    .model-container model-viewer {
+        width: 100%;
+        height: 100%;
+        display: block;    /* Prevents default inline layout bugs */
+    }
+  </style>
+
+  <!-- =======================================================
+  * Template Name: PhotoFolio
+  * Template URL: https://bootstrapmade.com/photofolio-bootstrap-photography-website-template/
+  * Updated: Aug 07 2024 with Bootstrap v5.3.3
+  * Author: BootstrapMade.com
+  * License: https://bootstrapmade.com/license/
+  ======================================================== -->
+</head>
+
+<body class="gallery-page">
+
+  <header id="header" class="header d-flex align-items-center sticky-top">
+    <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="../index.html">Home<br></a></li>
+          <li class="dropdown"><a href="gallery.html" class="active"><span>Photos</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+            <ul>
+              <li><a href="gallery-Gantrisch.html" class="active">Tour du Gantrisch</a></li>
+              <li><a href="gallery-SchynigePlatte.html" class="active">Schynige Platte</a></li>
+              <li><a href="gallery-Videmanette.html" class="active">Videmanette</a></li>
+              <li><a href="gallery-Grece.html" class="active">Grèce</a></li>
+            </ul>
+          </li>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+<!--
+    <a href="../index.html" class="logo d-flex align-items-center me-auto me-xl-0">
+      <!-- Uncomment the line below if you also wish to use an image logo 
+      <!-- <img src="assets/img/logo.png" alt=""> 
+      <i class="bi bi-camera"></i>
+      <h1 class="sitename">PhotoFolio</h1>
+    </a> -->
+  </header> 
+
+  <main class="main">
+
+    <!-- Page Title -->
+    <div class="page-title" data-aos="fade">
+      <div class="heading">
+        <div class="container">
+          <div class="row d-flex justify-content-center text-center">
+            <div class="col-lg-8">
+              <h1>Grèce et Mont Olympe</h1>
+              <p class="mb-0">18 au 22 juillet 2026</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- End Page Title -->
+
+    <!-- Gallery Details Section -->
+    <section id="gallery-details" class="gallery-details section">
+
+      <div class="container" data-aos="fade-up">
+
+        <div class="portfolio-details-slider swiper init-swiper" width="50%">
+          <script type="application/json" class="swiper-config">
+            {
+              "loop": true,
+              "speed": 600,
+              "autoplay": {
+                "delay": 5000
+              },
+              "slidesPerView": "auto",
+              "navigation": {
+                "nextEl": ".swiper-button-next",
+                "prevEl": ".swiper-button-prev"
+              },
+              "pagination": {
+                "el": ".swiper-pagination",
+                "type": "bullets",
+                "clickable": true
+              }
+            }
+          </script>
+          <div class="swiper-wrapper align-items-center">
+
+            <div class="swiper-slide">
+              <img src="assets/img/CarteGrece.png" alt="">
+            </div>
+
+          </div>
+          <div class="swiper-button-prev"></div>
+          <div class="swiper-button-next"></div>
+          <div class="swiper-pagination"></div>
+        </div>
+
+      </div>
+
+    </section><!-- /Gallery Details Section -->
+
+    <section>
+      <div class="model-container">
+        <model-viewer id="tone-demo"
+            src="assets/img/MontOlympe.glb"
+            environment-image="assets/img/Puresky_4k.hdr" 
+            camera-controls touch-action="pan-y"
+            max-camera-orbit="auto 90deg auto"
+            max-field-of-view='20deg'
+            min-field-of-view="0deg">
+        </model-viewer>
+      </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery section">
+
+      <div class="container-fluid" data-aos="fade-up" data-aos-delay="100">
+
+        <div class="row gy-4 justify-content-center">
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece001.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece001.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece002.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece002.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece004.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece004.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece005.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece005.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece006.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece006.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece007.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece007.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece008.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece008.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece009.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece009.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece010.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece010.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece011.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece011.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece012.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece012.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece013.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece013.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece014.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece014.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece015.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece015.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece016.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece016.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece017.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece017.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece018.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece018.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece019.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece019.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece020.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece020.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece021.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece021.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece022.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece022.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece023.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece023.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece024.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece024.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece025.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece025.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece026.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece026.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece027.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece027.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece028.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece028.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece029.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece029.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece030.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece030.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece031.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece031.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece032.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece032.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece033.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece033.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece034.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece034.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece035.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece035.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece036.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece036.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece037.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece037.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece038.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece038.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece039.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece039.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece040.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece040.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece041.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece041.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece042.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece042.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece043.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece043.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece044.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece044.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece045.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece045.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece046.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece046.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece047.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece047.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece048.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece048.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece049.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece049.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece050.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece050.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece051.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece051.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece052.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece052.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece053.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece053.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece054.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece054.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece055.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece055.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece056.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece056.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece057.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece057.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece058.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece058.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece059.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece059.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece060.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece060.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece061.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece061.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece062.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece062.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece063.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece063.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece064.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece064.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece065.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece065.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece066.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece066.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece067.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece067.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece068.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece068.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece069.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece069.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece070.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece070.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece071.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece071.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece072.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece072.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece073.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece073.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece074.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece074.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece075.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece075.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece076.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece076.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece077.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece077.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece078.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece078.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece079.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece079.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece080.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece080.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece081.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece081.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece082.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece082.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece083.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece083.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece084.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece084.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece085.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece085.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece086.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece086.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece087.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece087.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece088.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece088.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece089.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece089.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece090.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece090.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece091.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece091.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece092.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece092.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece093.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece093.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece094.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece094.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece095.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece095.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece096.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece096.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece097.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece097.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece098.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece098.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece099.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece099.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece100.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece100.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece101.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece101.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece102.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece102.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece103.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece103.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece104.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece104.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece105.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece105.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece106.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece106.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece107.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece107.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece108.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece108.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece109.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece109.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece110.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece110.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece111.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece111.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece112.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece112.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece113.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece113.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece114.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece114.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece115.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece115.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece116.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece116.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece117.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece117.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece118.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece118.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece119.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece119.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece120.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece120.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece121.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece121.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece122.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece122.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece123.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece123.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece124.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece124.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece125.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece125.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+          <div class="col-xl-3 col-lg-4 col-md-6"><div class="gallery-item h-100"><img src="assets/img/Grece/cGrece126.jpg" class="img-fluid" alt=""><div class="gallery-links d-flex align-items-center justify-content-center"><a href="assets/img/Grece/Grece126.jpg" title="Grèce" class="glightbox preview-link"><i class="bi bi-arrows-angle-expand"></i></a></div></div></div><!-- End Gallery Item -->
+        </div>
+      </div>
+      
+    </section><!-- /Gallery Section -->
+
+  </main>
+
+  <footer id="footer" class="footer">
+
+    <div class="container">
+      <div class="copyright text-center ">
+        <p>© <span>Copyright</span> <strong class="px-1 sitename">Jean-Marie Antonietti</strong> <span>All Rights Reserved</span></p>
+      </div>
+      <div class="credits">
+        <!-- All the links in the footer should remain intact. -->
+        <!-- You can delete the links only if you've purchased the pro version. -->
+        <!-- Licensing information: https://bootstrapmade.com/license/ -->
+        <!-- Purchase the pro version with working PHP/AJAX contact form: [buy-url] -->
+        Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
+      </div>
+    </div>
+
+  </footer>
+
+  <!-- Scroll Top -->
+  <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+  <!-- Preloader -->
+  <div id="preloader">
+    <div class="line"></div>
+  </div>
+
+  <!-- Vendor JS Files -->
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+
+  <!-- Main JS File -->
+  <script src="assets/js/main.js"></script>
+
+</body>
+
+</html>
