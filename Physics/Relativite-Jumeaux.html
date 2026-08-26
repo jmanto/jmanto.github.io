@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Paradoxe des jumeaux — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Paradoxe des jumeaux de Langevin</h1>
+    <div class="sub">Voyage aller-retour d'une fusée vers une étoile à 4 années-lumière — décalage entre le temps propre du voyageur et le temps terrestre.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>β = v/c (croisière) <span class="val" id="betaVal">0.70</span></label>
+        <input type="range" id="beta" min="0" max="29" step="1" value="20">
+      </div>
+      <div class="ctrl">
+        <label>Accélération (a.l./an²) <span class="val" id="AxVal">-5.0</span></label>
+        <input type="range" id="Ax" min="0" max="80" step="1" value="40">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="cvUnivers" width="440" height="440"></canvas>
+        <div class="canvas-label">ligne d'univers de la fusée (repère terrestre)</div>
+      </div>
+      <div>
+        <canvas id="cvTemps" width="440" height="440"></canvas>
+        <div class="canvas-label">temps voyageur — temps terrestre selon le voyageur</div>
+      </div>
+    </div>
+    <div class="readout" id="readout"></div>
+  </div>
+
+  <footer>
+    Cinématique newtonienne par morceaux (MRUA) et facteur de Lorentz variable calculés en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de positionMRUA/vitesseMRUA/gamma_lorentz et de init_plot(). */
+const PYTHON_SETUP = `
+import numpy as np
+
+_state = {}
+
+def gamma_lorentz(beta):
+    return 1.0 / np.sqrt(1 - beta**2)
+
+def position_mrua(t, a0, v0, x0, t0):
+    return 0.5 * a0 * (t - t0)**2 + v0 * (t - t0) + x0
+
+def vitesse_mrua(t, a0, v0, t0):
+    return a0 * (t - t0) + v0
+
+def compute(beta, Ax):
+    d = 4.0
+    nstep = 500
+
+    ta_rt = d / beta
+    ts_rt = -beta / Ax
+
+    tt1, dt1 = np.linspace(0, ta_rt, nstep, endpoint=False, retstep=True)
+    xt1 = position_mrua(tt1, 0, beta, 0, 0)
+    vt1 = vitesse_mrua(tt1, 0, beta, 0)
+    dt_rt1 = dt1 * np.ones_like(tt1)
+
+    nstep2 = int(nstep * ts_rt / ta_rt)
+    tt2, dt2 = np.linspace(ta_rt, ta_rt + 2 * ts_rt, nstep2, endpoint=False, retstep=True)
+    xt2 = position_mrua(tt2, Ax, beta, d, ta_rt)
+    vt2 = vitesse_mrua(tt2, Ax, beta, ta_rt)
+    dt_rt2 = dt2 * np.ones_like(tt2)
+
+    tt3, dt3 = np.linspace(ta_rt + 2 * ts_rt, 2 * ta_rt + 2 * ts_rt, nstep, endpoint=False, retstep=True)
+    xt3 = position_mrua(tt3, 0, -beta, d, ta_rt + 2 * ts_rt)
+    vt3 = vitesse_mrua(tt3, 0, -beta, ta_rt + 2 * ts_rt)
+    dt_rt3 = dt3 * np.ones_like(tt3)
+
+    tt_rt = np.concatenate([tt1, tt2, tt3])
+    xt_rt = np.concatenate([xt1, xt2, xt3])
+    vt_rt = np.concatenate([vt1, vt2, vt3])
+    dt_rt = np.concatenate([dt_rt1, dt_rt2, dt_rt3])
+
+    lorentz_t = gamma_lorentz(vt_rt)
+    dt_rf = dt_rt / lorentz_t
+
+    tt_rf = np.zeros_like(tt_rt)
+    for i in range(len(dt_rf) - 1):
+        tt_rf[i + 1] = tt_rf[i] + dt_rf[i]
+
+    tt_ageTerre = tt_rt - vt_rt * xt_rt
+
+    _state.update(tt_rt=tt_rt, xt_rt=xt_rt, tt_rf=tt_rf, tt_ageTerre=tt_ageTerre, nstep=nstep, nstep2=nstep2)
+
+    rajeunissement = 100 * (tt_rt[-1] - tt_rf[-1]) / tt_rt[-1]
+    return [tt_rt.tolist(), xt_rt.tolist(), tt_rf.tolist(), tt_ageTerre.tolist(), int(2 * nstep + nstep2), float(rajeunissement)]
+
+def frame_at(idx):
+    s = _state
+    return [s['xt_rt'][idx], s['tt_rt'][idx], s['tt_rf'][idx], s['tt_ageTerre'][idx]]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const FRAME_MS = 20;
+let running = false, timerId = null, frame = 0, totalFrames = 1;
+let ttRt = [], xtRt = [], ttRf = [], ttAgeTerre = [];
+
+const betas = document.getElementById('beta'), Axs = document.getElementById('Ax');
+const betaVal = document.getElementById('betaVal'), AxVal = document.getElementById('AxVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvUnivers = document.getElementById('cvUnivers'), cvTemps = document.getElementById('cvTemps');
+const readout = document.getElementById('readout');
+
+const mapBeta = v => { let b = 0.1 + v / 29 * 0.9; if (b >= 1) b = 0.9999; return b; };
+const mapAx = v => -0.1 + v / 80 * (-9.9); // sld 0..80 -> -0.1..-10
+
+function drawUnivers(fx, ft, fage) {
+  const ctx = clearCanvas(cvUnivers);
+  const tmax = Math.max(...ttRt) * 1.05;
+  const map = makeMapper(-0.5, 4.5, 0, tmax, cvUnivers.width, cvUnivers.height, false);
+
+  drawSeries(ctx, map, xtRt, ttRt, { color: waveColor('--bleu'), width: 2 });
+  drawDisk(ctx, map, fx, ft, 0.05, waveColor('--jaune'));
+  drawDisk(ctx, map, 0, fage, 0.05, waveColor('--vert'));
+  drawSeries(ctx, map, [0, fx], [fage, ft], { color: waveColor('--vert'), width: 1, dash: [4, 3] });
+  drawAxisLabels(ctx, cvUnivers.width, cvUnivers.height, 'Distance / a.l.', 'Temps terrestre / an');
+}
+
+function drawTemps(idx) {
+  const ctx = clearCanvas(cvTemps);
+  const H = cvTemps.height / 2, W = cvTemps.width;
+  const tmax = Math.max(...ttRt) * 1.05;
+
+  ctx.save();
+  let map = makeMapper(0, tmax, 0, Math.max(...ttRf) * 1.1 || 1, W, H, false);
+  drawSeries(ctx, map, ttRt, ttRf, { color: waveColor('--bleu'), width: 2 });
+  drawDisk(ctx, map, ttRt[idx], ttRf[idx], (tmax) * 0.01, waveColor('--jaune'));
+  ctx.fillStyle = '#6f8f8a'; ctx.font = '10px monospace'; ctx.fillText('Temps voyageur / an', 6, 12);
+  ctx.restore();
+
+  ctx.save(); ctx.translate(0, H);
+  map = makeMapper(0, tmax, Math.min(...ttAgeTerre) * 1.1, Math.max(...ttAgeTerre) * 1.1, W, H, false);
+  drawSeries(ctx, map, ttRt, ttAgeTerre, { color: waveColor('--bleu'), width: 2 });
+  drawDisk(ctx, map, ttRt[idx], ttAgeTerre[idx], tmax * 0.01, waveColor('--jaune'));
+  ctx.fillStyle = '#6f8f8a'; ctx.fillText('Temps terrestre selon voyageur / an', 6, 12);
+  ctx.fillText('Temps terrestre / an', W - 100, H - 4);
+  ctx.restore();
+}
+
+function render(idx) {
+  const [fx, ft, frf, fage] = pyodide.runPython(`frame_at(${idx})`).toJs();
+  drawUnivers(fx, ft, fage);
+  drawTemps(idx);
+  readout.innerHTML = `
+    Temps terrestre : <b>${ft.toFixed(2)}</b> ans &nbsp;|&nbsp;
+    Temps voyageur : <b>${frf.toFixed(2)}</b> ans &nbsp;|&nbsp;
+    Temps terrestre selon le voyageur : <b>${fage.toFixed(2)}</b> ans
+  `;
+}
+
+function tick() {
+  frame = (frame + 1) % totalFrames;
+  render(frame);
+}
+
+function resetSimulation() {
+  const beta = mapBeta(parseFloat(betas.value)), Ax = mapAx(parseFloat(Axs.value));
+  const [tt, xt, trf, tage, nf, rajeun] = pyodide.runPython(`compute(${beta}, ${Ax})`).toJs();
+  ttRt = tt; xtRt = xt; ttRf = trf; ttAgeTerre = tage; totalFrames = nf;
+  frame = 0;
+  render(0);
+  readout.innerHTML += `<br>Rajeunissement du voyageur : <b>${rajeun.toFixed(2)} %</b>`;
+}
+
+[betas, Axs].forEach(sl => sl.addEventListener('input', () => {
+  betaVal.textContent = mapBeta(parseFloat(betas.value)).toFixed(2);
+  AxVal.textContent = mapAx(parseFloat(Axs.value)).toFixed(1);
+  if (pyodide) resetSimulation();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; frame = 0; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  betaVal.textContent = mapBeta(parseFloat(betas.value)).toFixed(2);
+  AxVal.textContent = mapAx(parseFloat(Axs.value)).toFixed(1);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

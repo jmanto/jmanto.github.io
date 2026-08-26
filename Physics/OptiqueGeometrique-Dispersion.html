@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Dispersion — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Dispersion de la lumière</h1>
+    <div class="sub">L'indice de réfraction d'un verre dépend de la longueur d'onde (loi de Cauchy) — chaque couleur est déviée différemment.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Longueur d'onde (nm) <span class="val" id="wlVal">580</span></label>
+        <input type="range" id="wl" min="0" max="40" step="1" value="20">
+      </div>
+      <div class="ctrl">
+        <label>Angle d'incidence (°) <span class="val" id="iVal">27</span></label>
+        <input type="range" id="i" min="0" max="85" step="1" value="27">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvSD" width="520" height="520"></canvas>
+  </div>
+
+  <footer>
+    Calcul effectué en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;. L'angle d'incidence, contrôlé par glisser-déposer dans le script d'origine, est remplacé par un slider.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="optics_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+const PYTHON_SETUP = `
+import numpy as np
+
+def refraction(wl, i_deg):
+    n1 = 1.0
+    nd, vd = 1.6, 38.0
+    n2 = n_vs_wl_py(wl, nd, vd)
+
+    i = np.deg2rad(i_deg)
+    ratio = n1 * np.sin(i) / n2
+    r = np.arcsin(ratio) if abs(ratio) < 1 else -np.pi / 2
+
+    longueur = 1.3
+    xi, yi = longueur * np.sin(i), -longueur * np.cos(i)
+    xr, yr = -longueur * np.sin(r), -longueur * np.cos(r)
+
+    return [float(xi), float(yi), float(xr), float(yr)]
+
+def n_vs_wl_py(wl, nd, vd):
+    lC, lD, lF = 656.3, 589.3, 486.1
+    B = (nd - 1) / (vd * (1 / lF**2 - 1 / lC**2))
+    A = nd - B / lD**2
+    return A + B / wl**2
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const wls = document.getElementById('wl'), is_ = document.getElementById('i');
+const wlVal = document.getElementById('wlVal'), iVal = document.getElementById('iVal');
+const cvSD = document.getElementById('cvSD');
+
+const mapWl = v => 380 + v / 40 * 400; // sld 0..40 -> 380..780 nm
+
+function render() {
+  const wl = mapWl(parseFloat(wls.value)), i = parseFloat(is_.value);
+  const [xi, yi, xr, yr] = pyodide.runPython(`refraction(${wl}, ${i})`).toJs();
+
+  const ctx = clearCanvas(cvSD);
+  const map = makeMapper(-2, 2, -2, 2, cvSD.width, cvSD.height, true);
+
+  drawRect(ctx, map, -1.5, 0, 3, 1.5, '#f2f2f2');
+  drawRect(ctx, map, -1.5, -1.5, 3, 1.5, '#dcdcdc');
+
+  drawProtractor(ctx, map, 0, 0, 90, 90, '#000000');
+  drawProtractor(ctx, map, 0, 0, 270, 90, '#000000');
+
+  drawSeries(ctx, map, [xi, 0, xr], [yi, 0, yr], { color: wl2rgb(wl), width: 3 });
+}
+
+[wls, is_].forEach(sl => sl.addEventListener('input', () => {
+  wlVal.textContent = mapWl(parseFloat(wls.value)).toFixed(0);
+  iVal.textContent = is_.value;
+  if (pyodide) render();
+}));
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  wlVal.textContent = mapWl(parseFloat(wls.value)).toFixed(0);
+  render();
+}
+setup();
+</script>
+</body>
+</html>

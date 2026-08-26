@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Accueil</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Le bandeau de navigation est chargé dynamiquement depuis header.html par nav.js -->
+<div id="site-header"></div>
+
+<main>
+  <p class="eyebrow">Page principale</p>
+  <h1>Bienvenue sur le site</h1>
+  <p class="lead">
+    Ceci est la page d'accueil du site. Le bandeau de navigation ci-dessus est
+    commun à toutes les pages : il permet de revenir ici à tout moment, et
+    d'accéder aux autres pages via les deux menus déroulants.
+  </p>
+  <hr class="divider">
+  <p class="lead">
+    Le bandeau ci-dessus n'est pas écrit dans cette page : il est chargé
+    depuis <code>header.html</code> par <code>nav.js</code> et inséré dans
+    l'emplacement <code>&lt;div id="site-header"&gt;</code>. Pour ajouter une
+    page, il suffit de dupliquer ce fichier en conservant cet emplacement
+    ainsi que les liens vers <code>styles.css</code> et <code>nav.js</code>.
+    Pour modifier le menu (ajouter, renommer ou déplacer une page), un seul
+    fichier à modifier : <code>header.html</code>.
+  </p>
+</main>
+
+<footer>
+  © 2026 — Modèle de page principale
+</footer>
+
+<script src="nav.js"></script>
+
+</body>
+</html>

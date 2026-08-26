@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Position, vitesse, accélération — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>De la position à la vitesse et à l'accélération</h1>
+    <div class="sub">Un mobile se déplace sur un axe selon une trajectoire cubique — visualisation simultanée de x(t), vₓ(t) et aₓ(t).</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="buttons">
+      <button id="btnStart">Démarrer</button>
+      <button id="btnStop">Mettre en pause</button>
+      <button id="btnInit">Initialiser</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="cvAxe" width="340" height="340"></canvas>
+        <div class="canvas-label">position sur l'axe</div>
+      </div>
+      <div>
+        <canvas id="cvXVA" width="560" height="340"></canvas>
+        <div class="canvas-label">x(t) — vₓ(t) — aₓ(t)</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Trajectoire cubique calculée en Python (NumPy) via Pyodide ; rendu et animation sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de init()/update_plot().
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+
+_t = np.linspace(-10, 20, 100)
+_a, _b, _c, _d = 0.005, -0.08, -0.2, 3
+
+_x = _a * _t**3 + _b * _t**2 + _c * _t + _d
+_vx = 3 * _a * _t**2 + 2 * _b * _t + _c
+_ax = 6 * _a * _t + 2 * _b
+
+def data():
+    return [_t.tolist(), _x.tolist(), _vx.tolist(), _ax.tolist()]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const FRAME_MS = 200; // identique à l'intervalle du QTimer d'origine
+let running = false, timerId = null, idx = 0;
+let t = [], x = [], vx = [], ax = [];
+
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvAxe = document.getElementById('cvAxe'), cvXVA = document.getElementById('cvXVA');
+
+function drawAxe() {
+  const ctx = clearCanvas(cvAxe);
+  const map = makeMapper(-9, 7, -8, 8, cvAxe.width, cvAxe.height, true);
+  drawAxisArrow(ctx, map, -9, 7, 0, 'x');
+  drawDisk(ctx, map, x[idx], 0, 1, waveColor('--bleufonce'), 1);
+}
+
+function drawXVA() {
+  const ctx = clearCanvas(cvXVA);
+  const W = cvXVA.width, H = cvXVA.height / 3;
+  const tmin = t[0], tmax = t[t.length - 1];
+
+  const panels = [
+    { data: x,  color: waveColor('--bleu'),   label: 'x' },
+    { data: vx, color: waveColor('--vert'),   label: 'vx' },
+    { data: ax, color: waveColor('--violet'), label: 'ax' },
+  ];
+
+  panels.forEach((p, i) => {
+    const yOff = i * H;
+    ctx.save();
+    ctx.translate(0, yOff);
+    const ymin = Math.min(...p.data) * 1.15 - 0.1, ymax = Math.max(...p.data) * 1.15 + 0.1;
+    const map = makeMapper(tmin, tmax, ymin, ymax, W, H, false);
+    drawHLine(ctx, map, tmin, tmax, 0, 'rgba(207,232,221,0.35)');
+    drawSeries(ctx, map, t, p.data, { color: p.color, width: 1.6 });
+    drawDisk(ctx, map, t[idx], p.data[idx], (tmax - tmin) * 0.012, p.color, 1);
+    ctx.fillStyle = '#6f8f8a'; ctx.font = '10px monospace';
+    ctx.fillText(p.label, 6, 12);
+    ctx.restore();
+  });
+
+  ctx.fillStyle = '#6f8f8a'; ctx.font = '10px monospace';
+  ctx.fillText('Temps', W - 40, cvXVA.height - 4);
+}
+
+function render() { drawAxe(); drawXVA(); }
+
+function tick() {
+  idx = (idx + 1) % t.length;
+  render();
+}
+
+function resetSimulation() { idx = 0; render(); }
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+
+  const [tt, xx, vxx, axx] = pyodide.runPython('data()').toJs();
+  t = tt; x = xx; vx = vxx; ax = axx;
+
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

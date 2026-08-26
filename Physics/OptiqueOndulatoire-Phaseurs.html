@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Phaseurs — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Diagramme de phaseurs</h1>
+    <div class="sub">Addition vectorielle de N phaseurs — construction géométrique de la figure d'interférence d'un réseau.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Nombre de sources <span class="val" id="nVal">1</span></label>
+        <input type="range" id="n" min="1" max="16" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Rapport λ/d <span class="val" id="wldVal">4</span></label>
+        <input type="range" id="wld" min="1" max="10" step="1" value="4">
+      </div>
+      <div class="ctrl">
+        <label>Angle θ (°) <span class="val" id="thetaVal">0.0</span></label>
+        <input type="range" id="theta" min="0" max="90" step="1" value="0">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="cvPhasors" width="440" height="440"></canvas>
+        <div class="canvas-label">phaseurs individuels et résultante (pointillé)</div>
+      </div>
+      <div>
+        <canvas id="cvAmpli" width="440" height="440"></canvas>
+        <div class="canvas-label">|résultante|² vs θ</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Calcul effectué en Python (NumPy, nombres complexes) via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="optics_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de compute_phasors(). */
+const PYTHON_SETUP = `
+import numpy as np
+
+def compute_phasors(n_sources, wlond, theta_deg, t=0.0):
+    theta_rad = np.deg2rad(theta_deg)
+    delta = 2 * np.pi * np.sin(theta_rad) / wlond
+    k = np.arange(n_sources)
+    omega = 1
+    phasors = np.exp(1j * (k * delta - omega * t))
+    resultant = phasors.sum()
+    return phasors, resultant
+
+def frame(n_sources, wlond, theta_deg, t):
+    phasors, resultant = compute_phasors(n_sources, wlond, theta_deg, t)
+    xs = phasors.real.tolist()
+    ys = phasors.imag.tolist()
+
+    theta_range = np.linspace(-90, 90, 200)
+    amplitudes = [abs(compute_phasors(n_sources, wlond, d)[1]) ** 2 for d in theta_range]
+
+    return [xs, ys, float(resultant.real), float(resultant.imag), theta_range.tolist(), amplitudes]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.05, FRAME_MS = 30;
+let running = false, timerId = null, t = 0;
+
+const ns = document.getElementById('n'), wlds = document.getElementById('wld'), thetas = document.getElementById('theta');
+const nVal = document.getElementById('nVal'), wldVal = document.getElementById('wldVal'), thetaVal = document.getElementById('thetaVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvPhasors = document.getElementById('cvPhasors'), cvAmpli = document.getElementById('cvAmpli');
+
+function hslColor(k, n) { return `hsl(${Math.round((k / Math.max(n - 1, 1)) * 280)}, 75%, 62%)`; }
+
+function drawPhasors(xs, ys, resR, resI, n) {
+  const ctx = clearCanvas(cvPhasors);
+  const maxReach = n * 1.15;
+  const map = makeMapper(-maxReach, maxReach, -maxReach, maxReach, cvPhasors.width, cvPhasors.height, true);
+
+  drawHLine(ctx, map, -maxReach, maxReach, 0, 'rgba(207,232,221,0.3)', []);
+  drawVLine(ctx, map, -maxReach, maxReach, 0, 'rgba(207,232,221,0.3)', []);
+
+  const circ = 200, cxs = [], cys = [];
+  for (let i = 0; i <= circ; i++) { cxs.push(Math.cos(2 * Math.PI * i / circ)); cys.push(Math.sin(2 * Math.PI * i / circ)); }
+  drawSeries(ctx, map, cxs, cys, { color: 'rgba(207,232,221,0.35)', width: 0.8, dash: [2, 2] });
+
+  let cx = 0, cy = 0;
+  for (let k = 0; k < xs.length; k++) {
+    drawArrow(ctx, map, cx, cy, cx + xs[k], cy + ys[k], { color: hslColor(k, xs.length), width: 1.8, headLength: 8 });
+    cx += xs[k]; cy += ys[k];
+  }
+  drawArrow(ctx, map, 0, 0, resR, resI, { color: '#ffffff', width: 2.4, headLength: 11 });
+}
+
+function drawAmpli(thetaRange, amplitudes, currentTheta) {
+  const ctx = clearCanvas(cvAmpli);
+  const ymax = Math.max(...amplitudes) * 1.1 || 1;
+  const map = makeMapper(-90, 90, 0, ymax, cvAmpli.width, cvAmpli.height, false);
+  drawSeries(ctx, map, thetaRange, amplitudes, { color: waveColor('--rouge'), width: 2 });
+  drawVLine(ctx, map, 0, ymax, currentTheta, waveColor('--jaune'), [5, 3]);
+  drawAxisLabels(ctx, cvAmpli.width, cvAmpli.height, 'θ / °', '|Résultante|²');
+}
+
+function render() {
+  const n = parseInt(ns.value), wld = parseFloat(wlds.value), theta = parseFloat(thetas.value);
+  const [xs, ys, resR, resI, thetaRange, amplitudes] = pyodide.runPython(`frame(${n}, ${wld}, ${theta}, ${t})`).toJs();
+  drawPhasors(xs, ys, resR, resI, n);
+  drawAmpli(thetaRange, amplitudes, theta);
+}
+
+function tick() { t += DT; render(); }
+
+function resetSimulation() { t = 0; render(); }
+
+[ns, wlds, thetas].forEach(sl => sl.addEventListener('input', () => {
+  nVal.textContent = ns.value;
+  wldVal.textContent = wlds.value;
+  thetaVal.textContent = parseFloat(thetas.value).toFixed(1);
+  if (!pyodide) return;
+  if (!running) render();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

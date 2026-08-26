@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Réseau de diffraction — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Diffraction par un réseau</h1>
+    <div class="sub">Figure de diffraction de Fraunhofer d'un réseau de N fentes de largeur finie.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Longueur d'onde (nm) <span class="val" id="wlVal">380</span></label>
+        <input type="range" id="wl" min="0" max="40" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Distance entre fentes (mm) <span class="val" id="dVal">0.80</span></label>
+        <input type="range" id="d" min="0" max="10" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Nombre de fentes <span class="val" id="NVal">1</span></label>
+        <input type="range" id="N" min="1" max="10" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Largeur des fentes (µm) <span class="val" id="aVal">10</span></label>
+        <input type="range" id="a" min="1" max="9" step="1" value="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvYoung" width="880" height="300"></canvas>
+  </div>
+
+  <footer>
+    Modèle de Fraunhofer calculé en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="optics_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de diffraction_grating_with_slit(). */
+const PYTHON_SETUP = `
+import numpy as np
+
+def diffraction(lambda_nm, d_mm, N_slits, a_um, x_range_mm):
+    lam = lambda_nm * 1e-9
+    lines_per_cm = 10 / d_mm
+    d = 1.0 / (lines_per_cm * 100.0)
+    a = a_um * 1e-6
+    L = 1.0
+
+    x = np.linspace(-x_range_mm * 1e-3, x_range_mm * 1e-3, 3000)
+    theta = x / L
+
+    beta = np.pi * d * np.sin(theta) / lam
+    alpha = np.pi * a * np.sin(theta) / lam
+
+    betas = np.where(np.abs(beta) < 1e-12, 1e-12, beta)
+    alphas = np.where(np.abs(alpha) < 1e-12, 1e-12, alpha)
+
+    I = (np.sin(N_slits * betas) / np.sin(betas)) ** 2 * (np.sin(alphas) / alphas) ** 2
+    I /= I.max()
+
+    return [(x * 1000).tolist(), I.tolist()]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const wls = document.getElementById('wl'), ds = document.getElementById('d'), Ns = document.getElementById('N'), as_ = document.getElementById('a');
+const wlVal = document.getElementById('wlVal'), dVal = document.getElementById('dVal'), NVal = document.getElementById('NVal'), aVal = document.getElementById('aVal');
+const cvYoung = document.getElementById('cvYoung');
+
+const mapWl = v => 380 + v / 40 * 400;
+const mapD  = v => 0.5 + v / 10 * 1.5;
+const mapA  = v => 10 + (v - 1) / 8 * 80;
+
+function render() {
+  const wl = mapWl(parseFloat(wls.value)), d = mapD(parseFloat(ds.value)), N = parseInt(Ns.value), a = mapA(parseFloat(as_.value));
+  const xRange = N === 1 ? 15 : 1.5;
+
+  const [x, I] = pyodide.runPython(`diffraction(${wl}, ${d}, ${N}, ${a}, ${xRange})`).toJs();
+
+  const ctx = clearCanvas(cvYoung);
+  const map = makeMapper(-xRange, xRange, 0, 1, cvYoung.width, cvYoung.height, false);
+  drawSeries(ctx, map, x, I, { color: wl2rgb(wl), width: 3 });
+  drawAxisLabels(ctx, cvYoung.width, cvYoung.height, "Position sur l'écran / mm", 'Intensité');
+}
+
+[wls, ds, Ns, as_].forEach(sl => sl.addEventListener('input', () => {
+  wlVal.textContent = mapWl(parseFloat(wls.value)).toFixed(0);
+  dVal.textContent = mapD(parseFloat(ds.value)).toFixed(2);
+  NVal.textContent = Ns.value;
+  aVal.textContent = mapA(parseFloat(as_.value)).toFixed(0);
+  if (pyodide) render();
+}));
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  wlVal.textContent = mapWl(parseFloat(wls.value)).toFixed(0);
+  dVal.textContent = mapD(parseFloat(ds.value)).toFixed(2);
+  aVal.textContent = mapA(parseFloat(as_.value)).toFixed(0);
+  render();
+}
+setup();
+</script>
+</body>
+</html>

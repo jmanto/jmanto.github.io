@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Vitesse limite — chute avec frottement — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Vitesse limite d'un parachutiste</h1>
+    <div class="sub">Chute avec frottement de l'air quadratique (traînée ∝ v²) — convergence vers la vitesse limite.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Masse (kg) <span class="val" id="mVal">10</span></label>
+        <input type="range" id="m" min="0" max="10" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Aire (m²) <span class="val" id="AVal">0.2</span></label>
+        <input type="range" id="A" min="0" max="36" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Masse volumique (kg/m³) <span class="val" id="rhoVal">0.2</span></label>
+        <input type="range" id="rho" min="0" max="36" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Cx <span class="val" id="CxVal">0.2</span></label>
+        <input type="range" id="Cx" min="0" max="36" step="1" value="0">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvVitesse" width="820" height="380"></canvas>
+  </div>
+
+  <footer>
+    Intégration de l'équation du mouvement (<code>scipy.integrate.solve_ivp</code>) en Python via Pyodide ; <code>g_terre</code> provient de <code>constants.js</code>. Rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de fun()/init_plot()/update_plot(). g_terre provient de constants.js. */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state(m, A, rho, Cx):
+    _state.update(m=m, A=A, rho=rho, Cx=Cx, t=0.0, y=[0.0, 0.0])
+    return [[0.0], [0.0]]
+
+def set_params(m, A, rho, Cx):
+    _state.update(m=m, A=A, rho=rho, Cx=Cx)
+
+def _deriv(t, x, m, A, rho, Cx):
+    vz = x[1]
+    az = g_terre - 0.5 * Cx * rho * A * x[1]**2 / m
+    return [vz, az]
+
+def step(dt):
+    s = _state
+    t, y = s['t'], s['y']
+    args = (s['m'], s['A'], s['rho'], s['Cx'])
+    sol = solve_ivp(_deriv, [t, t + dt], y, args=args, t_eval=[t + dt], rtol=1e-9)
+    s['t'] = t + dt
+    s['y'] = [sol.y[0][0], sol.y[1][0]]
+    return [s['t'], s['y'][1]]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.05, FRAME_MS = 30;
+let running = false, timerId = null;
+let history = { t: [0], vz: [0] };
+
+const ms = document.getElementById('m'), As = document.getElementById('A'), rhos = document.getElementById('rho'), Cxs = document.getElementById('Cx');
+const mVal = document.getElementById('mVal'), AVal = document.getElementById('AVal'), rhoVal = document.getElementById('rhoVal'), CxVal = document.getElementById('CxVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvVitesse = document.getElementById('cvVitesse');
+
+const mapM   = v => v / 10 * 100;             // sld 0..10 -> 0..100 kg
+const mapAro = v => 0.2 + v / 36 * 1.8;        // sld 0..36 -> 0.2..2 (Aire, rho, Cx : même mapping)
+
+function draw() {
+  const ctx = clearCanvas(cvVitesse);
+  const map = makeMapper(0, 50, 0, 100, cvVitesse.width, cvVitesse.height, false);
+  drawSeries(ctx, map, history.t, history.vz, { color: waveColor('--vert'), width: 2 });
+  drawAxisLabels(ctx, cvVitesse.width, cvVitesse.height, 'Temps / s', 'Vitesse / (m/s)');
+}
+
+function applyParams() {
+  pyodide.runPython(`set_params(${mapM(parseFloat(ms.value))}, ${mapAro(parseFloat(As.value))}, ${mapAro(parseFloat(rhos.value))}, ${mapAro(parseFloat(Cxs.value))})`);
+}
+
+function tick() {
+  const [t, vz] = pyodide.runPython(`step(${DT})`).toJs();
+  history.t.push(t); history.vz.push(vz);
+  draw();
+}
+
+function resetSimulation() {
+  const m = mapM(parseFloat(ms.value)), A = mapAro(parseFloat(As.value)), rho = mapAro(parseFloat(rhos.value)), Cx = mapAro(parseFloat(Cxs.value));
+  pyodide.runPython(`init_state(${m}, ${A}, ${rho}, ${Cx})`);
+  history = { t: [0], vz: [0] };
+  draw();
+}
+
+[ms, As, rhos, Cxs].forEach(sl => sl.addEventListener('input', () => {
+  mVal.textContent = mapM(parseFloat(ms.value)).toFixed(2);
+  AVal.textContent = mapAro(parseFloat(As.value)).toFixed(2);
+  rhoVal.textContent = mapAro(parseFloat(rhos.value)).toFixed(2);
+  CxVal.textContent = mapAro(parseFloat(Cxs.value)).toFixed(2);
+  if (!pyodide) return;
+  applyParams();
+  if (!running) resetSimulation();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  mVal.textContent = mapM(parseFloat(ms.value)).toFixed(2);
+  AVal.textContent = mapAro(parseFloat(As.value)).toFixed(2);
+  rhoVal.textContent = mapAro(parseFloat(rhos.value)).toFixed(2);
+  CxVal.textContent = mapAro(parseFloat(Cxs.value)).toFixed(2);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

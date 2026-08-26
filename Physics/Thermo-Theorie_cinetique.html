@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Théorie cinétique des gaz — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Théorie cinétique des gaz</h1>
+    <div class="sub">Collisions élastiques entre particules de deux populations à températures différentes — convergence vers la distribution de Maxwell-Boltzmann.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="buttons">
+      <button id="btnStart">Démarrer</button>
+      <button id="btnStop">Mettre en pause</button>
+      <button id="btnInit">Initialiser</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="cvBox" width="440" height="440"></canvas>
+        <div class="canvas-label">froide (bleu) — chaude (rouge)</div>
+      </div>
+      <div>
+        <canvas id="cvHist" width="440" height="440"></canvas>
+        <div class="canvas-label">distribution des vitesses — Maxwell-Boltzmann (blanc = équilibre final)</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Détection des collisions et intégration en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;. Nombre de particules réduit pour rester fluide dans le navigateur (voir note ci-dessous).
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise de MDSimulation.advance(), sans dépendance à
+   scipy.spatial (distance calculée par diffusion NumPy) pour rester robuste
+   dans Pyodide. Nombre de particules réduit (voir note dans la réponse).
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+
+_state = {}
+
+def _pairwise_collide(pos, vel, idxs, r):
+    sub = pos[idxs]
+    diff = sub[:, None, :] - sub[None, :, :]
+    dist = np.sqrt((diff ** 2).sum(axis=2))
+    iarr, jarr = np.where(dist < 2 * r)
+    k = iarr < jarr
+    iarr, jarr = iarr[k], jarr[k]
+    for ii, jj in zip(iarr, jarr):
+        i, j = idxs[ii], idxs[jj]
+        pos_i, vel_i = pos[i], vel[i]
+        pos_j, vel_j = pos[j], vel[j]
+        rel_pos, rel_vel = pos_i - pos_j, vel_i - vel_j
+        r_rel = rel_pos @ rel_pos
+        if r_rel == 0:
+            continue
+        v_rel = rel_vel @ rel_pos
+        v_rel = 2 * rel_pos * v_rel / r_rel - rel_vel
+        v_cm = (vel_i + vel_j) / 2
+        vel[i] = v_cm - v_rel / 2
+        vel[j] = v_cm + v_rel / 2
+
+def init_state():
+    ns2 = 200  # particules par population (réduit ; voir note)
+    n = 2 * ns2
+
+    rscale = 5e6
+    r = 2e-10 * rscale
+    tscale = 1e9
+    f_lib = 3
+    Ecin2T = f_lib * (tscale / rscale) ** 2 * 40 * 1.66e-27 / 1.38e-23
+
+    v_rms1, v_rms2 = 253.0, 753.0
+    sbar = v_rms1 * rscale / tscale
+    sbar2 = v_rms2 * rscale / tscale
+
+    pos1 = np.random.random((ns2, 2)) / 2
+    theta = np.random.random(ns2) * 2 * np.pi
+    s0 = sbar * np.random.random(ns2)
+    vel1 = (s0 * np.array((np.cos(theta), np.sin(theta)))).T
+
+    pos2 = 0.5 + np.random.random((ns2, 2)) / 2
+    theta = np.random.random(ns2) * 2 * np.pi
+    s0 = sbar2 * np.random.random(ns2)
+    vel2 = (s0 * np.array((np.cos(theta), np.sin(theta)))).T
+
+    pos = np.concatenate((pos1, pos2), axis=0)
+    vel = np.concatenate((vel1, vel2), axis=0)
+
+    _state.update(pos=pos, vel=vel, r=r, m=1.0, ns2=ns2, nsteps=0,
+                   sbar=sbar, sbar2=sbar2, Ecin2T=Ecin2T, n_break_wall=400)
+
+    return [ns2, float(sbar), float(sbar2)]
+
+def step(dt):
+    s = _state
+    pos, vel, r, ns2, m = s['pos'], s['vel'], s['r'], s['ns2'], s['m']
+    s['nsteps'] += 1
+    pos += vel * dt
+
+    if s['nsteps'] < s['n_break_wall']:
+        idx1 = np.arange(0, ns2)
+        idx2 = np.arange(ns2, 2 * ns2)
+        _pairwise_collide(pos, vel, idx1, r)
+        _pairwise_collide(pos, vel, idx2, r)
+
+        hit_left1 = pos[:ns2, 0] < r
+        hit_right1 = pos[:ns2, 0] > 0.5 - r
+        hit_left2 = pos[ns2:, 0] < 0.5 + r
+        hit_right2 = pos[ns2:, 0] > 1 - r
+        vsub1 = vel[:ns2, 0]; vsub1[hit_left1 | hit_right1] *= -1; vel[:ns2, 0] = vsub1
+        vsub2 = vel[ns2:, 0]; vsub2[hit_left2 | hit_right2] *= -1; vel[ns2:, 0] = vsub2
+        wall_visible = True
+    else:
+        idx_all = np.arange(2 * ns2)
+        _pairwise_collide(pos, vel, idx_all, r)
+        hit_left = pos[:, 0] < r
+        hit_right = pos[:, 0] > 1 - r
+        vel[hit_left | hit_right, 0] *= -1
+        wall_visible = False
+
+    hit_bottom = pos[:, 1] < r
+    hit_top = pos[:, 1] > 1 - r
+    vel[hit_bottom | hit_top, 1] *= -1
+
+    speeds = np.hypot(vel[:, 0], vel[:, 1])
+    KE1 = 0.5 * m * float(np.sum(speeds[:ns2] ** 2))
+    KE2 = 0.5 * m * float(np.sum(speeds[ns2:] ** 2))
+    T1 = KE1 / ns2 * s['Ecin2T']
+    T2 = KE2 / ns2 * s['Ecin2T']
+
+    return [pos.tolist(), speeds.tolist(), T1, T2, s['nsteps'], wall_visible]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const FRAME_MS = 30, DT = 1 / 30;
+let running = false, timerId = null;
+let ns2 = 50, sbar = 1, sbar2 = 1, m = 1.0;
+
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvBox = document.getElementById('cvBox'), cvHist = document.getElementById('cvHist');
+
+function histogram(data, xmax, nbars) {
+  const counts = new Array(nbars).fill(0);
+  const binWidth = xmax / nbars;
+  data.forEach(v => {
+    if (v >= xmax || v < 0) return;
+    counts[Math.min(nbars - 1, Math.floor(v / binWidth))]++;
+  });
+  const total = data.length;
+  return counts.map(c => c / (total * binWidth));
+}
+
+function maxwellBoltzmann(vgrid, meanKE, mass) {
+  const a = mass / (2 * meanKE);
+  return vgrid.map(v => 2 * a * v * Math.exp(-a * v * v));
+}
+
+function drawBox(pos, wallVisible) {
+  const ctx = clearCanvas(cvBox);
+  const map = makeMapper(0, 1, 0, 1, cvBox.width, cvBox.height, true);
+  if (wallVisible) drawSeries(ctx, map, [0.5, 0.5], [0, 1], { color: '#ffffff', width: 3 });
+  for (let i = 0; i < pos.length; i++) {
+    const color = i < ns2 ? waveColor('--bleu') : waveColor('--rouge');
+    drawDisk(ctx, map, pos[i][0], pos[i][1], 0.006, color);
+  }
+  ctx.strokeStyle = 'rgba(207,232,221,0.4)'; ctx.lineWidth = 2;
+  const [x0, y0] = map(0, 0), [x1, y1] = map(1, 1);
+  ctx.strokeRect(Math.min(x0, x1), Math.min(y0, y1), Math.abs(x1 - x0), Math.abs(y1 - y0));
+}
+
+function drawHist(speeds, T1, T2, nsteps) {
+  const ctx = clearCanvas(cvHist);
+  const W = cvHist.width, H = cvHist.height / 2;
+  const xmax = 3 * sbar, nbars = 40;
+  const speeds1 = speeds.slice(0, ns2), speeds2 = speeds.slice(ns2);
+
+  const meanKE1 = 0.5 * m * speeds1.reduce((a, v) => a + v * v, 0) / ns2;
+  const meanKE2 = 0.5 * m * speeds2.reduce((a, v) => a + v * v, 0) / ns2;
+  const fmax1 = Math.sqrt(m / meanKE1 / Math.E), fmax2 = Math.sqrt(m / meanKE2 / Math.E);
+  const ymax = 1.2 * Math.max(fmax1, fmax2);
+
+  const vgrid = []; for (let i = 0; i <= 100; i++) vgrid.push(i / 100 * xmax);
+  const fCombined = maxwellBoltzmann(vgrid, meanKE1 + meanKE2, m * 2);
+
+  [{ speeds: speeds1, meanKE: meanKE1, color: waveColor('--bleu'), T: T1 },
+   { speeds: speeds2, meanKE: meanKE2, color: waveColor('--rouge'), T: T2 }].forEach((pop, i) => {
+    ctx.save(); ctx.translate(0, i * H);
+    const map = makeMapper(0, xmax, 0, ymax, W, H, false);
+    const hist = histogram(pop.speeds, xmax, nbars);
+    const binWidth = xmax / nbars;
+    hist.forEach((h, b) => drawRect(ctx, map, b * binWidth, 0, binWidth, h, pop.color, 0.5));
+    const fcurve = maxwellBoltzmann(vgrid, pop.meanKE, m);
+    drawSeries(ctx, map, vgrid, fcurve, { color: pop.color, width: 1.6 });
+    drawSeries(ctx, map, vgrid, fCombined, { color: '#ffffff', width: 1.2, dash: [4, 3] });
+    ctx.fillStyle = '#cfe8dd'; ctx.font = '11px monospace';
+    ctx.fillText(`T = ${pop.T.toFixed(0)} K`, W - 90, 14);
+    ctx.restore();
+  });
+
+  ctx.fillStyle = '#6f8f8a'; ctx.font = '10px monospace';
+  ctx.fillText(`Pas de simulation = ${nsteps}`, 8, cvHist.height - 6);
+}
+
+function tick() {
+  const [pos, speeds, T1, T2, nsteps, wallVisible] = pyodide.runPython(`step(${DT})`).toJs();
+  drawBox(pos, wallVisible);
+  drawHist(speeds, T1, T2, nsteps);
+}
+
+function resetSimulation() {
+  const [n2, sb, sb2] = pyodide.runPython('init_state()').toJs();
+  ns2 = n2; sbar = sb; sbar2 = sb2;
+  tick();
+}
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+  running = true; timerId = setInterval(tick, FRAME_MS); // démarrage automatique, comme dans le script d'origine
+}
+setup();
+</script>
+</body>
+</html>

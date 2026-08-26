@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Travail interne — frottement — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Travail des forces internes — frottement</h1>
+    <div class="sub">Deux blocs glissant l'un contre l'autre avec frottement — énergie cinétique du système et travail des forces de frottement (couple action-réaction).</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="buttons">
+      <button id="btnStart">Démarrer</button>
+      <button id="btnStop">Mettre en pause</button>
+      <button id="btnInit">Initialiser</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="canvas-wrap">
+      <canvas id="cvSysteme" width="820" height="140"></canvas>
+      <div class="canvas-label">bloc 1 (bleu foncé) — bloc 2 (vert clair) — centre de masse (point bleu)</div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="cvEnergie" width="820" height="220"></canvas>
+      <div class="canvas-label">énergie cinétique (vert) — travail total des frottements (blanc)</div>
+    </div>
+  </div>
+
+  <footer>
+    Intégration de l'équation du mouvement (<code>scipy.integrate.solve_ivp</code>) en Python via Pyodide ; <code>g_terre</code> provient de <code>constants.js</code>. Rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de fun()/energies()/update_plot().
+   g_terre provient de constants.js (loadPhysicalConstants), sans redéfinition
+   locale ni préfixe "pc.".
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state():
+    m1, m2 = 1.0, 1.0
+    mu_c = 0.03
+    x1_0, v1_0 = -1.0, -3.5
+    x2_0, v2_0 = -9.0, 1.0
+
+    _state.update(m1=m1, m2=m2, mu_c=mu_c, t=0.0, Wtot=0.0,
+                   y=[x1_0, v1_0, x2_0, v2_0])
+    return _energies_and_cm()
+
+def _energies_and_cm():
+    m1, m2, y = _state['m1'], _state['m2'], _state['y']
+    Ec = 0.5 * (m1 * y[1]**2 + m2 * y[3]**2)
+    xCM = (m1 * y[0] + m2 * y[2]) / (m1 + m2)
+    return [_state['t'], y[0], y[2], xCM, Ec, _state['Wtot']]
+
+def _deriv(t, x, mu_c):
+    v1 = x[1]
+    a1 = -mu_c * g_terre * np.sign(x[1] - x[3])
+    v2 = x[3]
+    a2 = +mu_c * g_terre * np.sign(x[1] - x[3])
+    return [v1, a1, v2, a2]
+
+def step(dt):
+    t, y, mu_c, m1 = _state['t'], _state['y'], _state['mu_c'], _state['m1']
+    x1_before, x2_before = y[0], y[2]
+
+    sol = solve_ivp(_deriv, [t, t + dt], y, args=(mu_c,), t_eval=[t + dt], rtol=1e-9)
+    _state['t'] = t + dt
+    _state['y'] = [sol.y[i][0] for i in range(4)]
+
+    _state['Wtot'] = _state['Wtot'] - mu_c * m1 * g_terre * abs(x1_before - _state['y'][0] - x2_before + _state['y'][2])
+
+    return _energies_and_cm()
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.02, FRAME_MS = 30, N_MAX = 300;
+const L1 = 22, L2 = 2;
+let running = false, timerId = null;
+let history = { t: [], Ec: [], W: [] };
+
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvSysteme = document.getElementById('cvSysteme'), cvEnergie = document.getElementById('cvEnergie');
+
+function drawSysteme(x1, x2, xCM) {
+  const ctx = clearCanvas(cvSysteme);
+  const map = makeMapper(-40, 10, -1.5, 6.5, cvSysteme.width, cvSysteme.height, true);
+  drawRect(ctx, map, x1 - L1 / 2, 0, L1, 2, waveColor('--bleufonce'), 0.8);
+  drawRect(ctx, map, x2 - L2 / 2, 2, L2, 2, waveColor('--vertclair'), 0.8);
+  drawDisk(ctx, map, xCM, 5, 0.5, waveColor('--bleu'));
+  const [px, py] = map(xCM, 5.5);
+  ctx.fillStyle = '#cfe8dd'; ctx.font = '11px monospace'; ctx.fillText('CM', px + 4, py);
+}
+
+function pushHistory(t, Ec, W) {
+  history.t.push(t); history.Ec.push(Ec); history.W.push(W);
+  if (history.t.length > N_MAX) { history.t.shift(); history.Ec.shift(); history.W.shift(); }
+}
+
+function drawEnergie() {
+  const ctx = clearCanvas(cvEnergie);
+  const n = history.t.length;
+  if (n < 2) return;
+  const map = makeMapper(0, N_MAX, -10, 10, cvEnergie.width, cvEnergie.height, false);
+  drawHLine(ctx, map, 0, N_MAX, 0, 'rgba(207,232,221,0.25)');
+  const idx = history.t.map((_, i) => i);
+  drawSeries(ctx, map, idx, history.Ec, { color: waveColor('--vert') || '#5ee6b5', width: 1.6 });
+  drawSeries(ctx, map, idx, history.W, { color: '#ffffff', width: 1.6 });
+  drawLegend(ctx, cvEnergie.width, [
+    { label: 'Cinétique', color: waveColor('--vert') || '#5ee6b5' },
+    { label: 'Travail (total)', color: '#ffffff' },
+  ]);
+}
+
+function tick() {
+  const [t, x1, x2, xCM, Ec, W] = pyodide.runPython(`step(${DT})`).toJs();
+  pushHistory(t, Ec, W);
+  drawSysteme(x1, x2, xCM);
+  drawEnergie();
+}
+
+function resetSimulation() {
+  const [t, x1, x2, xCM, Ec, W] = pyodide.runPython('init_state()').toJs();
+  history = { t: [], Ec: [], W: [] };
+  pushHistory(t, Ec, W);
+  drawSysteme(x1, x2, xCM);
+  drawEnergie();
+}
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

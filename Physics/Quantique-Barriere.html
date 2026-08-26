@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Paquet d'onde quantique — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Paquet d'onde quantique</h1>
+    <div class="sub">Évolution temporelle d'un paquet d'onde gaussien face à une barrière, un puits ou un potentiel harmonique — équation de Schrödinger résolue par schéma implicite (Crank-Nicolson, algorithme de Thomas).</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Potentiel</label>
+        <select id="fct">
+          <option value="Barrière">Barrière</option>
+          <option value="Puit">Puit</option>
+          <option value="Harmonique">Harmonique</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Intensité du potentiel <span class="val" id="V0Val">0.2</span></label>
+        <input type="range" id="V0" min="1" max="15" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Largeur <span class="val" id="largeurVal">0.1</span></label>
+        <input type="range" id="largeur" min="1" max="10" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Position <span class="val" id="positionVal">0.5</span></label>
+        <input type="range" id="position" min="0" max="10" step="1" value="5">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvPsi" width="880" height="360"></canvas>
+    <div class="legend">
+      <div><span class="swatch" style="background:var(--bleufonce)"></span>potentiel V(x)</div>
+      <div><span class="swatch" style="background:var(--vieuxrose)"></span>densité de probabilité |ψ(x)|²</div>
+    </div>
+  </div>
+
+  <footer>
+    Résolution de l'équation de Schrödinger (schéma implicite, algorithme de Thomas) en Python via Pyodide — la classe <code>Schrodinger1D</code> du script d'origine est reprise quasiment telle quelle, sans traduction JavaScript. Résolution spatiale réduite pour rester fluide (voir note ci-dessous).
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — portage direct de la classe Schrodinger1D (algorithme de
+   Thomas pour un schéma implicite). Aucune traduction JS de la physique :
+   la classe Python tourne telle quelle dans Pyodide.
+   Seule différence : N (nombre de points spatiaux) est réduit, et
+   iterations() avance moins de sous-pas par frame, pour rester interactif
+   (voir explication dans la réponse).
+   ============================================================================ */
+const PYTHON_SETUP = `
+import math, cmath
+import numpy as np
+
+class Schrodinger1D:
+    def __init__(self, L, N):
+        self.L = L
+        self.N = N
+        self.dx = L / (N - 1)
+        self.b = np.zeros(N, dtype=complex)
+        self.e = np.zeros(N, dtype=complex)
+        self.x = np.zeros(N, dtype=complex)
+        self.beta = np.zeros(N, dtype=complex)
+        self.gamma = np.zeros(N, dtype=complex)
+
+    def config(self, dt, V):
+        N = self.N
+        self.dt = dt
+        dx2 = self.dx * self.dx
+        alpha = 2 * dx2 / dt
+        for k in range(1, self.N - 1):
+            self.b[k] = 1j * alpha - dx2 * V[k] - 2.0
+            self.e[k] = 1j * alpha + dx2 * V[k] + 2.0
+        self.b[0] = 1.0
+        self.b[N - 1] = 1.0
+        self.beta[0] = self.b[0]
+        self.gamma[0] = 1.0 / self.beta[0]
+        for k in range(1, N):
+            self.beta[k] = self.b[k] - self.gamma[k - 1]
+            if self.beta[k] == 0:
+                raise Exception("Impossible de resoudre le systeme ligne " + str(k))
+            self.gamma[k] = 1.0 / self.beta[k]
+
+    def iterations(self, psi0, ti, tf):
+        psi = psi0.copy()
+        t = ti
+        while t < tf:
+            self.x[0] = (self.e[0] * psi[0] - psi[1]) / self.beta[0]
+            for k in range(1, self.N - 1):
+                self.x[k] = (-psi[k - 1] + self.e[k] * psi[k] - psi[k + 1] - self.x[k - 1]) / self.beta[k]
+            k = self.N - 1
+            self.x[k] = (-psi[k - 1] + self.e[k] * psi[k] - self.x[k - 1]) / self.beta[k]
+            psi[self.N - 1] = self.x[self.N - 1]
+            for k in range(self.N - 2, -1, -1):
+                psi[k] = self.x[k] - self.gamma[k] * psi[k + 1]
+            t += self.dt
+        return [psi, t]
+
+    def V_barriere(self, V0, largeur):
+        q = int(largeur / self.dx / 2)
+        V = np.zeros(self.N)
+        P = int(self.N / 2)
+        V[P - q:P + q] = V0
+        return V
+
+    def V_puit(self, V0, position, largeur):
+        q = int(largeur / self.dx / 2)
+        V = np.zeros(self.N)
+        P = int(position / self.dx)
+        V[:max(0, P - q)] = V0
+        V[min(self.N, P + q):] = V0
+        return V
+
+    def V_harmo(self, V0, position, largeur):
+        P = int(position / self.dx)
+        V = np.array([V0 * ((ix - P) * self.dx) ** 2 for ix in range(0, self.N)])
+        return V
+
+    def paquet(self, x0, k0, sigma0):
+        psi = np.zeros(self.N, dtype=complex)
+        for k in range(1, self.N - 1):
+            x = self.dx * k
+            psi[k] = cmath.exp(1j * k0 * x) * math.exp(-(x - x0) * (x - x0) / (4 * sigma0 ** 2))
+        return psi
+
+_state = {}
+
+def init_state(fct, V0, largeur, position):
+    N = 500   # réduit de 2000 à 500 (voir note)
+    L = 1.0
+    dx = L / (N - 1)
+    x = (np.arange(N) * dx).tolist()
+
+    sch = Schrodinger1D(L, N)
+
+    if fct == "Barrière":
+        V = sch.V_barriere(V0, largeur / 10)
+        x0 = 0.2
+    elif fct == "Puit":
+        V = sch.V_puit(V0, position, largeur)
+        x0 = position
+    else:
+        V = sch.V_harmo(10 * V0, position, largeur)
+        x0 = position
+
+    l0 = 2e-2
+    k0 = np.pi * 2 / l0
+    E = k0 ** 2
+    sigma0 = 0.02
+
+    dt = 2 * dx * dx
+    psi = sch.paquet(x0, k0, sigma0)
+    sch.config(dt, V * E)
+
+    _state.update(sch=sch, psi=psi, t=0.0, dt=dt, V=V)
+
+    dens = (psi * np.conj(psi)).real.tolist()
+    return [x, V.tolist(), dens]
+
+def step(nsub):
+    s = _state
+    sch, psi, t, dt = s['sch'], s['psi'], s['t'], s['dt']
+    psi, t = sch.iterations(psi, t, t + nsub * dt)
+    s['psi'], s['t'] = psi, t
+    dens = (psi * np.conj(psi)).real.tolist()
+    return dens
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const NSUB = 8;      // sous-pas par frame (réduit de 20 à 8)
+const FRAME_MS = 40;
+let running = false, timerId = null;
+let xData = [], VData = [];
+
+const fctSel = document.getElementById('fct');
+const V0s = document.getElementById('V0'), largeurs = document.getElementById('largeur'), positions = document.getElementById('position');
+const V0Val = document.getElementById('V0Val'), largeurVal = document.getElementById('largeurVal'), positionVal = document.getElementById('positionVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvPsi = document.getElementById('cvPsi');
+
+const mapV0 = v => 0.1 + (v - 1) / 14 * 1.4;      // sld 1..15 -> 0.1..1.5
+const mapLargeur = v => 0.1 + (v - 1) / 9 * 0.4;  // sld 1..10 -> 0.1..0.5
+const mapPosition = v => v / 10;                  // sld 0..10 -> 0..1.0
+
+function draw(dens) {
+  const ctx = clearCanvas(cvPsi);
+  const map = makeMapper(0, 1, 0, 1.2, cvPsi.width, cvPsi.height, false);
+  drawSeries(ctx, map, xData, VData, { color: waveColor('--bleufonce'), width: 2 });
+  drawSeries(ctx, map, xData, dens, { color: waveColor('--vieuxrose'), width: 2 });
+}
+
+function tick() {
+  const dens = pyodide.runPython(`step(${NSUB})`).toJs();
+  draw(dens);
+}
+
+function resetSimulation() {
+  const V0 = mapV0(parseFloat(V0s.value));
+  const largeur = mapLargeur(parseFloat(largeurs.value));
+  const position = mapPosition(parseFloat(positions.value));
+
+  const [x, V, dens] = pyodide.runPython(`init_state("${fctSel.value}", ${V0}, ${largeur}, ${position})`).toJs();
+  xData = x; VData = V;
+  draw(dens);
+}
+
+function fullReinit() { running = false; if (timerId) clearInterval(timerId); resetSimulation(); }
+
+[V0s, largeurs, positions].forEach(sl => sl.addEventListener('input', () => {
+  V0Val.textContent = mapV0(parseFloat(V0s.value)).toFixed(1);
+  largeurVal.textContent = mapLargeur(parseFloat(largeurs.value)).toFixed(1);
+  positionVal.textContent = mapPosition(parseFloat(positions.value)).toFixed(1);
+  if (pyodide) fullReinit(); // le script d'origine arrête et réinitialise systématiquement sur ces sliders
+}));
+fctSel.addEventListener('change', () => { if (pyodide) resetSimulation(); }); // n'arrête pas l'animation, comme dans le script d'origine
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => fullReinit());
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  V0Val.textContent = mapV0(parseFloat(V0s.value)).toFixed(1);
+  largeurVal.textContent = mapLargeur(parseFloat(largeurs.value)).toFixed(1);
+  positionVal.textContent = mapPosition(parseFloat(positions.value)).toFixed(1);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

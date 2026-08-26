@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Champ électrique — Pyodide</title>
+<style>
+  :root {
+    --bg: #081018; --panel: #0d1a26; --trace: #5ee6b5; --trace-dim: #2b6e57;
+    --grid: #12293a; --text: #cfe8dd; --text-dim: #6f8f8a; --accent: #ff8c5a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg);
+    background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 28px 28px; color: var(--text); font-family: 'Courier New', ui-monospace, monospace;
+    min-height: 100vh; padding: 28px 18px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header { margin-bottom: 22px; border-bottom: 1px solid var(--grid); padding-bottom: 16px; }
+  .eyebrow { color: var(--accent); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }
+  h1 { font-family: Georgia, 'Times New Roman', serif; font-weight: 400; font-size: 28px; margin: 6px 0 4px; }
+  .sub { color: var(--text-dim); font-size: 13px; }
+  .status { display: inline-block; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--text-dim); margin-right: 6px; }
+  .dot.ready { background: var(--trace); box-shadow: 0 0 6px var(--trace); }
+  .panel { background: var(--panel); border: 1px solid var(--grid); border-radius: 3px; padding: 20px; margin-bottom: 18px; }
+  .charge-block { border: 1px solid var(--grid); border-radius: 3px; padding: 14px 16px; margin-bottom: 14px; }
+  .charge-title { font-size: 12px; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 10px; text-transform: uppercase; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px 20px; align-items: end; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .ctrl label span.val { color: var(--trace); }
+  input[type=range] { width: 100%; accent-color: var(--trace); }
+  #plot-holder { display: flex; justify-content: center; min-height: 400px; align-items: center; }
+  #plot-holder img { max-width: 100%; }
+  footer { color: var(--text-dim); font-size: 11px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Champ électrique de trois charges ponctuelles</h1>
+    <div class="sub">Lignes de champ (streamplot) et équipotentielles (contour) — rendues avec Matplotlib.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="charge-block">
+      <div class="charge-title">Charge 1</div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>q₁ (nC) <span class="val" id="q1Val">0.0</span></label>
+          <input type="range" id="q1" min="0" max="10" step="1" value="5">
+        </div>
+        <div class="ctrl">
+          <label>x₁ <span class="val" id="x1Val">-2.0</span></label>
+          <input type="range" id="x1" min="-5" max="5" step="0.2" value="-2">
+        </div>
+        <div class="ctrl">
+          <label>y₁ <span class="val" id="y1Val">0.0</span></label>
+          <input type="range" id="y1" min="-5" max="5" step="0.2" value="0">
+        </div>
+      </div>
+    </div>
+    <div class="charge-block">
+      <div class="charge-title">Charge 2</div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>q₂ (nC) <span class="val" id="q2Val">0.0</span></label>
+          <input type="range" id="q2" min="0" max="10" step="1" value="5">
+        </div>
+        <div class="ctrl">
+          <label>x₂ <span class="val" id="x2Val">2.0</span></label>
+          <input type="range" id="x2" min="-5" max="5" step="0.2" value="2">
+        </div>
+        <div class="ctrl">
+          <label>y₂ <span class="val" id="y2Val">0.0</span></label>
+          <input type="range" id="y2" min="-5" max="5" step="0.2" value="0">
+        </div>
+      </div>
+    </div>
+    <div class="charge-block">
+      <div class="charge-title">Charge 3</div>
+      <div class="controls">
+        <div class="ctrl">
+          <label>q₃ (nC) <span class="val" id="q3Val">0.0</span></label>
+          <input type="range" id="q3" min="0" max="10" step="1" value="5">
+        </div>
+        <div class="ctrl">
+          <label>x₃ <span class="val" id="x3Val">0.0</span></label>
+          <input type="range" id="x3" min="-5" max="5" step="0.2" value="0">
+        </div>
+        <div class="ctrl">
+          <label>y₃ <span class="val" id="y3Val">2.0</span></label>
+          <input type="range" id="y3" min="-5" max="5" step="0.2" value="2">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div id="plot-holder"><span style="color:var(--text-dim); font-size:13px;">en attente du moteur Python…</span></div>
+  </div>
+
+  <footer>
+    Champ et potentiel calculés par NumPy (vectorisé), lignes de champ et équipotentielles rendues par Matplotlib (<code>streamplot</code>, <code>contour</code>) via Pyodide. Le glisser-déposer des charges du script d'origine est remplacé par des sliders de position (x, y) pour chacune.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise de PointCharge, total_electric_field/total_potential
+   et combined_plot(), avec le calcul du champ vectorisé (NumPy, sans boucle
+   Python point par point) pour rester rapide dans Pyodide. Le rendu
+   (streamplot + contour) reste Matplotlib, exporté en PNG.
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+import matplotlib
+matplotlib.use("AGG")
+import matplotlib.pyplot as plt
+import io, base64
+
+K_COULOMB = 8.99e9
+
+def field_and_potential(qs, xs, ys, xlim=(-5, 5), ylim=(-5, 5), grid_size=100):
+    x = np.linspace(xlim[0], xlim[1], grid_size)
+    y = np.linspace(ylim[0], ylim[1], grid_size)
+    X, Y = np.meshgrid(x, y)
+
+    Ex = np.zeros(X.shape)
+    Ey = np.zeros(X.shape)
+    V = np.zeros(X.shape)
+
+    for q, px, py in zip(qs, xs, ys):
+        dx = X - px
+        dy = Y - py
+        r = np.sqrt(dx**2 + dy**2)
+        r_safe = np.where(r == 0, 1e-9, r)
+        Ex += K_COULOMB * q * dx / r_safe**3
+        Ey += K_COULOMB * q * dy / r_safe**3
+        V += K_COULOMB * q / r_safe
+
+    return X, Y, Ex, Ey, V
+
+def render(qs, xs, ys):
+    X, Y, Ex, Ey, V = field_and_potential(qs, xs, ys)
+
+    fig, ax = plt.subplots(figsize=(6.6, 6.6), facecolor="#0d1a26")
+    ax.set_facecolor("#0d1a26")
+
+    ax.streamplot(X, Y, Ex, Ey, color="#d98a9c", linewidth=1, density=1.6, arrowstyle='->')
+    ax.contour(X, Y, -V, levels=50, cmap='RdYlBu', alpha=0.75)
+
+    for q, px, py in zip(qs, xs, ys):
+        col = "#b04a5a" if q > 0 else "#2f5f8f"
+        ax.scatter(px, py, color=col, s=220, zorder=3, edgecolors="#ffffff", linewidths=0.8)
+
+    ax.set_xlabel("x", color="#6f8f8a")
+    ax.set_ylabel("y", color="#6f8f8a")
+    ax.tick_params(colors="#6f8f8a", labelsize=9)
+    for spine in ax.spines.values():
+        spine.set_color("#12293a")
+    ax.set_aspect('equal', 'box')
+    fig.tight_layout()
+
+    buf = io.BytesIO()
+    fig.savefig(buf, format="png", dpi=110, facecolor=fig.get_facecolor())
+    plt.close(fig)
+    buf.seek(0)
+    return base64.b64encode(buf.read()).decode("utf-8")
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+const plotHolder = document.getElementById('plot-holder');
+
+const ids = ['q1', 'x1', 'y1', 'q2', 'x2', 'y2', 'q3', 'x3', 'y3'];
+const els = Object.fromEntries(ids.map(id => [id, document.getElementById(id)]));
+const vals = Object.fromEntries(ids.map(id => [id, document.getElementById(id + 'Val')]));
+
+const mapQ = v => 1e-9 * (-4 + v / 10 * 8); // sld 0..10 -> -4..4 nC
+
+function updateLabels() {
+  vals.q1.textContent = (mapQ(parseFloat(els.q1.value)) * 1e9).toFixed(1);
+  vals.q2.textContent = (mapQ(parseFloat(els.q2.value)) * 1e9).toFixed(1);
+  vals.q3.textContent = (mapQ(parseFloat(els.q3.value)) * 1e9).toFixed(1);
+  ['x1', 'y1', 'x2', 'y2', 'x3', 'y3'].forEach(id => { vals[id].textContent = parseFloat(els[id].value).toFixed(1); });
+}
+
+async function render() {
+  const qs = [mapQ(parseFloat(els.q1.value)), mapQ(parseFloat(els.q2.value)), mapQ(parseFloat(els.q3.value))];
+  const xs = [parseFloat(els.x1.value), parseFloat(els.x2.value), parseFloat(els.x3.value)];
+  const ys = [parseFloat(els.y1.value), parseFloat(els.y2.value), parseFloat(els.y3.value)];
+
+  const imgB64 = await pyodide.runPythonAsync(`render([${qs}], [${xs}], [${ys}])`);
+  plotHolder.innerHTML = `<img src="data:image/png;base64,${imgB64}" alt="champ électrique">`;
+}
+
+ids.forEach(id => els[id].addEventListener('input', () => {
+  updateLabels();
+  if (pyodide) render();
+}));
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / Matplotlib…';
+  await pyodide.loadPackage(['numpy', 'matplotlib']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  updateLabels();
+  render();
+}
+setup();
+</script>
+</body>
+</html>

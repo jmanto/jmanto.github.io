@@ -70,7 +70,7 @@
   </footer>
 </div>
 
-<script src="assets/constants.js"></script>
+<script src="constants.js"></script>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
 <script>
 /* ============================================================================
@@ -193,7 +193,7 @@ function drawChaine(pos1, pos2, pos3) {
   const anchors = [0, pos1, pos2, pos3, 4 * L0];
   ctxChaine.strokeStyle = '#cfe8dd'; ctxChaine.lineWidth = 1.1;
   for (let i = 0; i < 4; i++) {
-    const [sx, sy] = springPath([anchors[i], 0], [anchors[i + 1], 0], 20, 0.15);
+    const [sx, sy] = springPath([anchors[i], 0], [anchors[i + 1], 0], 10, 0.35);
     ctxChaine.beginPath();
     for (let j = 0; j < sx.length; j++) {
       const [px, py] = map(sx[j], sy[j]);

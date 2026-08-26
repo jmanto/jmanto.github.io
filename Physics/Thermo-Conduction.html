@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Conduction thermique — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Conduction thermique le long d'une barre</h1>
+    <div class="sub">Diffusion de la chaleur (équation de la chaleur 1D, différences finies) entre deux réservoirs de température.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Température T1 <span class="val" id="T1Val">700</span></label>
+        <input type="range" id="T1" min="0" max="10" step="1" value="10">
+      </div>
+      <div class="ctrl">
+        <label>Température T2 <span class="val" id="T2Val">100</span></label>
+        <input type="range" id="T2" min="0" max="10" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Diffusivité thermique <span class="val" id="kVal">0.005</span></label>
+        <input type="range" id="k" min="0" max="10" step="1" value="0">
+      </div>
+      <div class="ctrl">
+        <label>Profil initial</label>
+        <select id="fct">
+          <option value="Marche">Marche</option>
+          <option value="Centre">Centre</option>
+        </select>
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvT" width="880" height="360"></canvas>
+  </div>
+
+  <footer>
+    Intégration explicite de l'équation de la chaleur en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt; avec une colormap type « coolwarm ».
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de init_plot()/update_plot() (schéma explicite aux différences finies). */
+const PYTHON_SETUP = `
+import numpy as np
+
+_state = {}
+
+def init_state(T1, T2, k, profil):
+    L, Nx = 1.0, 50
+    dx = L / (Nx - 1)
+    dt = 0.004
+
+    T = T2 * np.ones(Nx)
+    if profil == "Centre":
+        T[int(0.4 * Nx):int(0.6 * Nx)] = T1
+    else:
+        T[:int(0.1 * Nx)] = T1
+
+    x = np.linspace(0, L, Nx)
+    _state.update(T=T, x=x, dx=dx, dt=dt, k=k)
+    return [x.tolist(), T.tolist()]
+
+def set_k(k):
+    _state['k'] = k
+
+def step():
+    T, dx, dt, k = _state['T'], _state['dx'], _state['dt'], _state['k']
+    RHS = dt * k * (T[:-2] - 2 * T[1:-1] + T[2:]) / dx**2
+    T[1:-1] += RHS
+    return T.tolist()
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const FRAME_MS = 20;
+let running = false, timerId = null, showCenterSource = true;
+let xData = [];
+
+const T1s = document.getElementById('T1'), T2s = document.getElementById('T2'), ks = document.getElementById('k'), fctSel = document.getElementById('fct');
+const T1Val = document.getElementById('T1Val'), T2Val = document.getElementById('T2Val'), kVal = document.getElementById('kVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvT = document.getElementById('cvT');
+
+const mapT1 = v => 400 + v / 10 * 300; // sld 0..10 -> 400..700
+const mapT2 = v => 100 + v / 10 * 300; // sld 0..10 -> 100..400
+const mapK  = v => 0.005 + v / 10 * 0.045; // sld 0..10 -> 0.005..0.05
+const TMIN = 100, TMAX = 700;
+
+function draw(T) {
+  const ctx = clearCanvas(cvT);
+  const map = makeMapper(-0.2, 1.2, 0, 800, cvT.width, cvT.height, false);
+
+  const T1 = mapT1(parseFloat(T1s.value)), T2 = mapT2(parseFloat(T2s.value));
+  const colorT1 = coolwarm((T1 - TMIN) / (TMAX - TMIN));
+  const colorT2 = coolwarm((T2 - TMIN) / (TMAX - TMIN));
+
+  if (fctSel.value === 'Centre') {
+    if (showCenterSource) drawRect(ctx, map, 0.4, 0, 0.2, 800, colorT1, 1);
+    drawRect(ctx, map, -0.2, 0, 0.2, 800, colorT2, 1);
+    drawRect(ctx, map, 1.0, 0, 0.2, 800, colorT2, 1);
+  } else {
+    drawRect(ctx, map, -0.2, 0, 0.2, 800, colorT1, 1);
+    drawRect(ctx, map, 1.0, 0, 0.2, 800, colorT2, 1);
+  }
+
+  drawSeries(ctx, map, xData, T, { color: waveColor('--jaune'), width: 2 });
+  drawAxisLabels(ctx, cvT.width, cvT.height, 'Position (m)', 'Température (K)');
+}
+
+function tick() {
+  showCenterSource = false;
+  const T = pyodide.runPython('step()').toJs();
+  draw(T);
+}
+
+function resetSimulation() {
+  showCenterSource = true;
+  const T1 = mapT1(parseFloat(T1s.value)), T2 = mapT2(parseFloat(T2s.value)), k = mapK(parseFloat(ks.value));
+  const [x, T] = pyodide.runPython(`init_state(${T1}, ${T2}, ${k}, "${fctSel.value}")`).toJs();
+  xData = x;
+  draw(T);
+}
+
+[T1s, T2s].forEach(sl => sl.addEventListener('input', () => {
+  T1Val.textContent = mapT1(parseFloat(T1s.value)).toFixed(0);
+  T2Val.textContent = mapT2(parseFloat(T2s.value)).toFixed(0);
+  if (pyodide) resetSimulation();
+}));
+ks.addEventListener('input', () => {
+  kVal.textContent = mapK(parseFloat(ks.value)).toFixed(3);
+  if (!pyodide) return;
+  pyodide.runPython(`set_k(${mapK(parseFloat(ks.value))})`);
+  if (!running) resetSimulation();
+});
+fctSel.addEventListener('change', () => { if (pyodide) resetSimulation(); });
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  T1Val.textContent = mapT1(parseFloat(T1s.value)).toFixed(0);
+  T2Val.textContent = mapT2(parseFloat(T2s.value)).toFixed(0);
+  kVal.textContent = mapK(parseFloat(ks.value)).toFixed(3);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

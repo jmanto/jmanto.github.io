@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Mouvement des planètes — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Mouvement d'une planète autour d'une étoile</h1>
+    <div class="sub">Trajectoire régie par la gravitation (unités normalisées, GM = 1) — ellipse, parabole ou hyperbole selon l'énergie mécanique.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Vitesse initiale <span class="val" id="v0Val">0.10</span></label>
+        <input type="range" id="v0" min="0" max="10" step="1" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Angle (°) <span class="val" id="alphaVal">0</span></label>
+        <input type="range" id="alpha" min="0" max="36" step="1" value="0">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvPlanete" width="560" height="560"></canvas>
+    <div class="readout" id="readout"></div>
+  </div>
+
+  <footer>
+    Intégration de l'équation du mouvement gravitationnel (<code>scipy.integrate.solve_ivp</code>) en Python via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* Reprise directe de fun()/init_plot()/update_plot(). */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state(v0, alpha):
+    x0, z0 = 4.0, 0.0
+    r0 = [x0, z0, v0 * np.cos(alpha), v0 * np.sin(alpha)]
+    Em = 0.5 * v0**2 - 1 / np.sqrt(x0**2 + z0**2)
+    _state.update(t=0.0, r=r0)
+    return [x0, z0, r0[2], r0[3], float(Em)]
+
+def _deriv(t, x):
+    d = np.sqrt(x[0]**2 + x[1]**2)
+    ax = -x[0] / d**3
+    az = -x[1] / d**3
+    return [x[2], x[3], ax, az]
+
+def step(dt):
+    s = _state
+    t, r = s['t'], s['r']
+    sol = solve_ivp(_deriv, [t, t + dt], r, t_eval=[t + dt], rtol=1e-9)
+    s['t'] = t + dt
+    s['r'] = [sol.y[i][0] for i in range(4)]
+    d = np.sqrt(s['r'][0]**2 + s['r'][1]**2)
+    return [s['r'][0], s['r'][1], s['r'][2], s['r'][3], float(d)]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.05, FRAME_MS = 25;
+let running = false, timerId = null;
+let trajX = [], trajZ = [];
+let lastEm = 0;
+
+const v0s = document.getElementById('v0'), alphas = document.getElementById('alpha');
+const v0Val = document.getElementById('v0Val'), alphaVal = document.getElementById('alphaVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvPlanete = document.getElementById('cvPlanete');
+const readout = document.getElementById('readout');
+
+const mapV0 = v => 0.1 + v / 10 * 0.9;               // sld 0..10 -> 0.1..1
+const mapAlpha = v => v / 36 * 2 * Math.PI;           // sld 0..36 -> 0..2π (degrés d'origine convertis en radians)
+
+function draw(x, z, vx, vz, Em) {
+  const ctx = clearCanvas(cvPlanete);
+  const map = makeMapper(-10, 10, -10, 10, cvPlanete.width, cvPlanete.height, true);
+
+  const [cx, cy] = map(0, 0);
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.moveTo(cx - 5, cy); ctx.lineTo(cx + 5, cy); ctx.moveTo(cx, cy - 5); ctx.lineTo(cx, cy + 5);
+  ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  drawSeries(ctx, map, trajX, trajZ, { color: waveColor('--bleufonce'), width: 1, dash: [3, 3] });
+  drawDisk(ctx, map, x, z, 0.5, waveColor('--bleu'), 0.85);
+  drawArrow(ctx, map, x, z, x + vx, z + vz, { color: waveColor('--vert'), width: 2, headLength: 9 });
+
+  readout.innerHTML = `Énergie mécanique : <b>${Em < 0 ? 'Em < 0 (orbite liée : ellipse)' : 'Em ≥ 0 (trajectoire ouverte : parabole/hyperbole)'}</b>`;
+}
+
+function tick() {
+  const [x, z, vx, vz, d] = pyodide.runPython(`step(${DT})`).toJs();
+  trajX.push(x); trajZ.push(z);
+  draw(x, z, vx, vz, lastEm);
+  if (d > 20) { running = false; if (timerId) clearInterval(timerId); } // condition d'arrêt, comme dans le script d'origine
+}
+
+function resetSimulation() {
+  const v0 = mapV0(parseFloat(v0s.value)), alpha = mapAlpha(parseFloat(alphas.value));
+  const [x0, z0, vx0, vz0, Em] = pyodide.runPython(`init_state(${v0}, ${alpha})`).toJs();
+  lastEm = Em;
+  trajX = [x0]; trajZ = [z0];
+  draw(x0, z0, vx0, vz0, Em);
+}
+
+[v0s, alphas].forEach(sl => sl.addEventListener('input', () => {
+  v0Val.textContent = mapV0(parseFloat(v0s.value)).toFixed(2);
+  alphaVal.textContent = (mapAlpha(parseFloat(alphas.value)) * 180 / Math.PI).toFixed(0);
+  if (!pyodide) return;
+  if (!running) resetSimulation();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); resetSimulation(); });
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  v0Val.textContent = mapV0(parseFloat(v0s.value)).toFixed(2);
+  alphaVal.textContent = (mapAlpha(parseFloat(alphas.value)) * 180 / Math.PI).toFixed(0);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

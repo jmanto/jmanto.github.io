@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Intégrale — sommes de Riemann — Pyodide</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
+    <h1>Intégrale — sommes de Riemann</h1>
+    <div class="sub">f(x) = 3x³ + 2x² − 4x + 15 — approximation de l'aire sous la courbe par un nombre croissant de rectangles.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Nombre de segments <span class="val" id="nVal">1</span></label>
+        <input type="range" id="n" min="0" max="200" step="1" value="0">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="results">
+      <div>
+        <canvas id="cvIntegrale" width="440" height="440"></canvas>
+        <div class="canvas-label">f(x) et rectangles de Riemann</div>
+      </div>
+      <div>
+        <canvas id="cvSomme" width="380" height="440"></canvas>
+        <div class="canvas-label">somme de Riemann en fonction de n</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Calcul effectué en Python (NumPy) via Pyodide ; rendu sur &lt;canvas&gt;.
+  </footer>
+</div>
+
+<script src="constants.js"></script>
+<script src="wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+const PYTHON_SETUP = `
+import numpy as np
+
+def f(x):
+    return 3 * x**3 + 2 * x**2 - 4 * x + 15
+
+def calc_integrale(xi, xf, n):
+    x = np.linspace(xi, xf, int(n), endpoint=False)
+    y = f(x)
+    width = (xf - xi) / n
+    return float(sum(y) * width)
+
+def compute(n):
+    x = np.linspace(-2, 2, 300)
+    y = f(x)
+
+    xr = np.linspace(-2, 2, int(n + 1), endpoint=True)
+    yr = f(xr)
+    width = 4 / n
+
+    n_all = list(range(1, 200))
+    n_vs_integrale = [calc_integrale(-2, 2, ni) for ni in n_all]
+
+    return [x.tolist(), y.tolist(), xr.tolist(), yr.tolist(), float(width),
+            n_all, n_vs_integrale, calc_integrale(-2, 2, n)]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const ns = document.getElementById('n'), nVal = document.getElementById('nVal');
+const cvIntegrale = document.getElementById('cvIntegrale'), cvSomme = document.getElementById('cvSomme');
+
+const mapN = v => 1 + v / 200 * 200; // sld 0..200 -> 1..201
+
+function render() {
+  const n = mapN(parseFloat(ns.value));
+  const [x, y, xr, yr, width, nAll, nVsIntegrale, currentIntegrale] =
+    pyodide.runPython(`compute(${n})`).toJs();
+
+  let ctx = clearCanvas(cvIntegrale);
+  let map = makeMapper(-2.5, 2.5, -5, 45, cvIntegrale.width, cvIntegrale.height, false);
+  for (let i = 0; i < xr.length - 1; i++) {
+    drawRect(ctx, map, xr[i], 0, width, yr[i], waveColor('--bleu'), 0.5);
+  }
+  if (n < 50) {
+    xr.forEach((xv, i) => drawDisk(ctx, map, xv, yr[i], 0.02, '#ffffff'));
+  }
+  drawSeries(ctx, map, x, y, { color: waveColor('--bleu'), width: 2 });
+  drawAxisLabels(ctx, cvIntegrale.width, cvIntegrale.height, 'x', 'f(x)');
+
+  ctx = clearCanvas(cvSomme);
+  map = makeMapper(0, 200, Math.min(...nVsIntegrale) - 1, Math.max(...nVsIntegrale) + 1, cvSomme.width, cvSomme.height, false);
+  drawSeries(ctx, map, nAll, nVsIntegrale, { color: waveColor('--bleu'), width: 2 });
+  drawDisk(ctx, map, n, currentIntegrale, 1.5, '#ffffff');
+  drawAxisLabels(ctx, cvSomme.width, cvSomme.height, 'n', 'Somme des aires');
+}
+
+ns.addEventListener('input', () => {
+  nVal.textContent = Math.round(mapN(parseFloat(ns.value)));
+  if (pyodide) render();
+});
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy…';
+  await pyodide.loadPackage(['numpy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  nVal.textContent = Math.round(mapN(parseFloat(ns.value)));
+  render();
+}
+setup();
+</script>
+</body>
+</html>
