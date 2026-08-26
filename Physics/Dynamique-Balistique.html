@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Balistique</title>
+<link rel="stylesheet" href="assets/style_pyodide.css">
+</head>
+<body>
+
+<!-- Le bandeau de navigation est chargé dynamiquement depuis header.html par nav.js -->
+<div id="site-header"></div>
+
+<div class="wrap">
+
+    <div class="eyebrow">Mécanique - Cinématique</div>
+    <h1>Balistique avec traînée</h1>
+    <div class="sub">Trajectoire d'un projectile soumis à la pesanteur et à une force de traînée proportionnelle à la vitesse.</div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
+
+  <div class="panel">
+    <div class="controls">
+      <div class="ctrl">
+        <label>Vitesse initiale (m/s) <span class="val" id="v0Val">5.0</span></label>
+        <input type="range" id="v0" min="0" max="10" step="0.5" value="1">
+      </div>
+      <div class="ctrl">
+        <label>Angle (°) <span class="val" id="alphaVal">15</span></label>
+        <input type="range" id="alpha" min="0" max="17" step="1" value="2">
+      </div>
+      <div class="ctrl">
+        <label>Traînée <span class="val" id="nuVal">0.00</span></label>
+        <input type="range" id="nu" min="0" max="10" step="0.5" value="0">
+      </div>
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <canvas id="cvTraj" maxwidth="1900" height="520"></canvas>
+  </div>
+
+  <footer>
+    (C) Jean-Marie Antonietti, 2026
+  </footer>
+</div>
+
+<script src="assets/nav.js"></script>
+<script src="assets/constants.js"></script>
+<script src="assets/wave_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
+<script>
+/* ============================================================================
+   PARTIE PYTHON — reprise directe de fun()/init_plot()/update_plot().
+   g_terre et DEG sont injectés par loadPhysicalConstants(), plus besoin de
+   les redéfinir ni de les préfixer par "pc.".
+   ============================================================================ */
+const PYTHON_SETUP = `
+import numpy as np
+from scipy.integrate import solve_ivp
+
+_state = {}
+
+def init_state(v0, alpha_deg, nu):
+    alpha = alpha_deg * DEG
+    x0, z0 = 0.0, 0.0
+    _state.update(v0=v0, alpha=alpha, nu=nu, x0=x0, z0=z0, t=0.0,
+                   y=[x0, v0 * np.cos(alpha), z0, v0 * np.sin(alpha)])
+
+    tt = np.linspace(0, 2 * v0 * np.sin(alpha) / g_terre, 100) if v0 > 0 else np.array([0])
+    traj_x = (v0 * np.cos(alpha) * tt).tolist()
+    traj_z = (-0.5 * g_terre * tt**2 + v0 * np.sin(alpha) * tt).tolist()
+    return [traj_x, traj_z, x0, z0]
+
+def set_nu(nu):
+    _state['nu'] = nu
+
+def _deriv(t, x, nu):
+    vx = x[1]
+    ax = -nu * x[1]
+    vz = x[3]
+    az = -g_terre - nu * x[3]
+    return [vx, ax, vz, az]
+
+def step(dt):
+    t, y, nu = _state['t'], _state['y'], _state['nu']
+    sol = solve_ivp(_deriv, [t, t + dt], y, args=(nu,), t_eval=[t + dt], rtol=1e-9)
+    _state['t'] = t + dt
+    _state['y'] = [sol.y[i][0] for i in range(4)]
+    return [_state['t'], _state['y'][0], _state['y'][2]]
+`;
+
+let pyodide;
+const statusDot = document.getElementById('statusDot');
+const statusText = document.getElementById('statusText');
+
+const DT = 0.02, FRAME_MS = 30;
+let running = false, timerId = null;
+let trajX = [], trajZ = [], x0 = 0, z0 = 0;
+
+const v0s = document.getElementById('v0'), alphas = document.getElementById('alpha'), nus = document.getElementById('nu');
+const v0Val = document.getElementById('v0Val'), alphaVal = document.getElementById('alphaVal'), nuVal = document.getElementById('nuVal');
+const btnStart = document.getElementById('btnStart'), btnStop = document.getElementById('btnStop'), btnInit = document.getElementById('btnInit');
+const cvTraj = document.getElementById('cvTraj');
+
+const mapV0    = v => v / 10 * 50;                  // sld 0..10 -> 0..50 m/s
+const mapAlpha = v => 5 + v / 17 * 85;               // sld 0..17 -> 5..90°
+const mapNu    = v => v / 10 * 0.5;                  // sld 0..10 -> 0..0.5
+
+function draw(px, pz) {
+  const ctx = clearCanvas(cvTraj);
+  const map = makeMapper(0, 260, 0, 260, cvTraj.width, cvTraj.height, false);
+  drawSeries(ctx, map, trajX, trajZ, { color: '#ffffff', width: 1, dash: [3, 3] });
+  drawDisk(ctx, map, px, pz, 5, waveColor('--bleufonce'), 0.9);
+}
+
+function resetSimulation() {
+  running = false; if (timerId) clearInterval(timerId);
+  const v0 = mapV0(parseFloat(v0s.value));
+  const alpha = mapAlpha(parseFloat(alphas.value));
+  const nu = mapNu(parseFloat(nus.value));
+  const [tx, tz, xx0, zz0] = pyodide.runPython(`init_state(${v0}, ${alpha}, ${nu})`).toJs();
+  trajX = tx; trajZ = tz; x0 = xx0; z0 = zz0;
+  draw(x0, z0);
+}
+
+function tick() {
+  const [t, px, pz] = pyodide.runPython(`step(${DT})`).toJs();
+  draw(px, pz);
+  if (pz < z0) { running = false; if (timerId) clearInterval(timerId); } // condition d'arrêt, comme dans le script d'origine
+}
+
+[v0s, alphas, nus].forEach(sl => sl.addEventListener('input', () => {
+  v0Val.textContent = mapV0(parseFloat(v0s.value)).toFixed(1);
+  alphaVal.textContent = mapAlpha(parseFloat(alphas.value)).toFixed(0);
+  nuVal.textContent = mapNu(parseFloat(nus.value)).toFixed(2);
+  if (!pyodide) return;
+  if (sl === nus) { pyodide.runPython(`set_nu(${mapNu(parseFloat(nus.value))})`); if (!running) resetSimulation(); }
+  else if (!running) resetSimulation();
+}));
+
+btnStart.addEventListener('click', () => {
+  if (running || !pyodide) return;
+  running = true; tick(); timerId = setInterval(tick, FRAME_MS);
+});
+btnStop.addEventListener('click', () => { running = false; if (timerId) clearInterval(timerId); });
+btnInit.addEventListener('click', () => resetSimulation());
+
+async function setup() {
+  pyodide = await loadPyodide();
+  statusText.textContent = 'Installation de NumPy / SciPy…';
+  await pyodide.loadPackage(['numpy', 'scipy']);
+  await loadPhysicalConstants(pyodide);
+  await pyodide.runPythonAsync(PYTHON_SETUP);
+  statusDot.classList.add('ready');
+  statusText.textContent = 'Prêt — moteur Python actif dans le navigateur';
+  v0Val.textContent = mapV0(parseFloat(v0s.value)).toFixed(1);
+  alphaVal.textContent = mapAlpha(parseFloat(alphas.value)).toFixed(0);
+  nuVal.textContent = mapNu(parseFloat(nus.value)).toFixed(2);
+  resetSimulation();
+}
+setup();
+</script>
+</body>
+</html>

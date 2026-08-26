@@ -9,7 +9,7 @@
 # General
 --------------------------------------------------------------*/
 :root {
-  --theme-color: #d43076;
+  --theme-color: #d4a030;
 }
 
 body {
@@ -710,7 +710,7 @@ section {
 
 .resume .resume-item h5 {
   font-size: 16px;
-  background: #eef0f2;
+  background: #e6e6e6;
   padding: 5px 15px;
   display: inline-block;
   font-weight: 600;
