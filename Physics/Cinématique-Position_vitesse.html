@@ -2,24 +2,29 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Position, vitesse, accélération — Pyodide</title>
+<title>Position, vitesse, accélération</title>
 <link rel="stylesheet" href="assets/style_pyodide.css">
 </head>
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="eyebrow">Simulation Pyodide · Python dans le navigateur</div>
-    <h1>De la position à la vitesse et à l'accélération</h1>
-    <div class="sub">Un mobile se déplace sur un axe selon une trajectoire cubique — visualisation simultanée de x(t), vₓ(t) et aₓ(t).</div>
-    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
-  </header>
+<!-- Le bandeau de navigation est chargé dynamiquement depuis header.html par nav.js -->
+<div id="site-header"></div>
+
+<div class="wrap">
+
+  <div class="eyebrow">Mécanique - Cinématique</div>
+  <h1>De la position à la vitesse et à l'accélération</h1>
+  <div class="sub">Un mobile se déplace sur un axe selon une trajectoire cubique — visualisation simultanée de x(t), vₓ(t) et aₓ(t)</div>
+  <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Chargement de Pyodide…</span></div>
 
   <div class="panel">
-    <div class="buttons">
-      <button id="btnStart">Démarrer</button>
-      <button id="btnStop">Mettre en pause</button>
-      <button id="btnInit">Initialiser</button>
+    <div class="controls">
+      <div class="ctrl buttons">
+        <button id="btnStart">Démarrer</button>
+        <button id="btnStop">Mettre en pause</button>
+        <button id="btnInit">Initialiser</button>
+      </div>
     </div>
   </div>
 
@@ -37,12 +42,13 @@
   </div>
 
   <footer>
-    Trajectoire cubique calculée en Python (NumPy) via Pyodide ; rendu et animation sur &lt;canvas&gt;.
+    (C) Jean-Marie Antonietti, 2026
   </footer>
 </div>
 
-<script src="constants.js"></script>
-<script src="wave_utils.js"></script>
+<script src="assets/nav.js"></script>
+<script src="assets/constants.js"></script>
+<script src="assets/wave_utils.js"></script>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.0/full/pyodide.js"></script>
 <script>
 /* ============================================================================
@@ -97,7 +103,7 @@ function drawXVA() {
     ctx.translate(0, yOff);
     const ymin = Math.min(...p.data) * 1.15 - 0.1, ymax = Math.max(...p.data) * 1.15 + 0.1;
     const map = makeMapper(tmin, tmax, ymin, ymax, W, H, false);
-    drawHLine(ctx, map, tmin, tmax, 0, 'rgba(207,232,221,0.35)');
+    drawHLine(ctx, map, tmin, tmax, 10, 'rgba(207,232,221,0.35)');
     drawSeries(ctx, map, t, p.data, { color: p.color, width: 1.6 });
     drawDisk(ctx, map, t[idx], p.data[idx], (tmax - tmin) * 0.012, p.color, 1);
     ctx.fillStyle = '#6f8f8a'; ctx.font = '10px monospace';
